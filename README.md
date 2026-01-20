@@ -1,73 +1,186 @@
-# React + TypeScript + Vite
+Here you go — **one single, clean, professional `README.md` file**, ready to **copy & paste as-is** 👇
+(No explanations, no comments, just the file.)
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+---
 
-Currently, two official plugins are available:
+```md
+# RefLab
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+RefLab is a professional learning and training platform for football referees, focused on improving decision-making, rule knowledge, and match performance.
 
-## React Compiler
+This repository contains the **RefLab MVP**, built by a small team with a strong focus on learning, clean architecture, and long-term scalability.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+---
 
-## Expanding the ESLint configuration
+## 🎯 Project Scope (MVP)
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+The MVP focuses on **one core learning loop**:
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+**Tests → Feedback → Dashboard insights**
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+Included in the MVP:
+- Authentication (email/password + Google)
+- Learning modules (Tests as the primary feature)
+- Dashboard with progress, strengths & weaknesses
+- Chatbot (basic)
+- Notifications (basic)
+- Profile & settings
+- Feedback / issue reporting
+- Legal pages (TOS, Privacy, Cookies)
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+Out of scope for MVP (planned later):
+- Advanced leaderboards & leagues
+- Advanced AI coaching
+- Community / social features
+- Deep analytics & reporting
+
+---
+
+## 🧱 Tech Stack
+
+### Frontend
+- React
+- TypeScript
+- Tailwind CSS
+- Vite
+
+### Backend
+- Supabase (Auth, Database, Storage)
+- Edge Functions (later, if needed)
+
+### Tooling
+- ESLint
+- Docker (local infra, optional)
+- Git + GitHub
+
+---
+
+## 📁 Project Structure
+
+This is a **monorepo**.
+
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+reflab/
+├── apps/
+│   └── frontend/       # React application
+├── backend/
+│   └── supabase/       # DB schema, migrations, functions
+├── infra/              # Docker / infrastructure (minimal for MVP)
+└── docs/               # Architecture notes
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+```
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+### Frontend structure (simplified)
+
+```
+
+src/
+├── app/                # Routing, AppShell, guards
+├── components/
+│   ├── ui/             # Reusable UI primitives (Button, Card, Input)
+│   └── layout/         # Header, Sidebar, BottomNav
+├── features/           # Feature-based folders
+│   └── <feature>/
+│       ├── components/ # Pages & sections
+│       ├── api/        # Supabase calls
+│       └── types.ts
+├── lib/                # Shared utilities (Supabase client)
+└── styles/             # Global styles
+
+````
+
+---
+
+## 🚀 Getting Started (Frontend)
+
+### Requirements
+- Node.js ≥ 18
+- npm
+
+### Setup
+```bash
+cd apps/frontend
+npm install
+````
+
+### Environment variables
+
+Create a `.env.local` file in `apps/frontend`:
+
+```
+VITE_SUPABASE_URL=your_project_url
+VITE_SUPABASE_ANON_KEY=your_anon_key
+```
+
+### Run the app
+
+```bash
+npm run dev
+```
+
+---
+
+## 🧭 Development Guidelines
+
+### UI vs Feature logic
+
+* Reusable UI components → `components/ui`
+* Page / feature-specific logic → `features/<feature>/components`
+
+**Rule:**
+
+> UI components render. Feature components decide behavior.
+
+### Feature folders
+
+Each feature owns its:
+
+* UI composition
+* API calls
+* Types
+
+Avoid cross-feature coupling.
+
+---
+
+## 🤖 AI Usage Guidelines
+
+AI is used to assist development, but:
+
+* Prompts must be explicit and precise
+* Generated code must be reviewed
+* Architecture rules must be respected
+* No direct Supabase calls inside UI components
+
+---
+
+## 🛠 Current Project Phase
+
+* Phase 1: Foundation ✅
+* Phase 2: Authentication 🚧
+* Phase 3: Tests learning loop ⏳
+
+---
+
+## 🔀 Contribution Workflow
+
+* Work on feature branches
+* Keep commits small and descriptive
+* Do not commit `.env` files
+* When unsure, ask before refactoring structure
+
+---
+
+## 📄 License
+
+Private project. License to be defined.
+
+```
+
+---
+
+If you want next, I can:
+- add a **“Team Roles & Ownership”** section
+- or write a **Phase 2 checklist** directly inside the README
 ```
