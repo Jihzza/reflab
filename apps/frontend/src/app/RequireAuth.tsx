@@ -9,23 +9,19 @@ interface RequireAuthProps {
 /**
  * Auth guard for protected routes.
  *
- * This component wraps routes that require authentication.
- * It checks the auth state from AuthProvider and:
- * 1. Shows a loading indicator while checking for existing session
- * 2. Redirects to landing page if no user is logged in
- * 3. Renders the protected content if user is authenticated
+ * Checks auth state and:
+ * 1. Shows skeleton while checking session
+ * 2. Redirects to landing if unauthenticated
+ * 3. Renders protected content if authenticated
  *
- * Usage in Router.tsx:
- *   <Route element={<RequireAuth><AppShell /></RequireAuth>}>
- *     <Route path="dashboard" element={<DashboardPage />} />
- *   </Route>
+ * Note: Username gate (for username_missing) is handled separately
+ * to allow users to reach the dashboard before completing onboarding.
  */
 export default function RequireAuth({ children }: RequireAuthProps) {
-  const { user, loading } = useAuth();
+  const { authStatus } = useAuth();
 
-  // While checking for existing session, show a loading state
-  // This prevents a flash of the login page when the user is actually logged in
-  if (loading) {
+  // While checking for existing session, show a loading skeleton
+  if (authStatus === "checking_session") {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-gray-500">Loading...</div>
@@ -33,11 +29,8 @@ export default function RequireAuth({ children }: RequireAuthProps) {
     );
   }
 
-  // No user logged in - redirect to landing page
-  // The landing page will have the login/signup forms
-  if (!user) {
-    // `replace` prevents the protected route from being added to history
-    // So when user logs in, they won't go "back" to a redirect loop
+  // Not authenticated - silent redirect to landing
+  if (authStatus === "unauthenticated" || authStatus === "error") {
     return <Navigate to="/" replace />;
   }
 

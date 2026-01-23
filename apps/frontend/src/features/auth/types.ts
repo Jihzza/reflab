@@ -1,20 +1,45 @@
 import type { Session, User } from '@supabase/supabase-js'
+import type { Profile } from './api/profilesApi'
+
+// Auth status states
+export type AuthStatus = 'checking_session' | 'authenticated' | 'unauthenticated' | 'error'
+
+// Profile/onboarding status states
+// - loading: fetching profile data
+// - incomplete: username not customized OR name not set
+// - complete: profile fully set up
+export type ProfileStatus = 'loading' | 'incomplete' | 'complete'
 
 // The shape of our auth context - what any component can access via useAuth()
 export interface AuthContextType {
   // The current user object (null if not logged in)
-  // Contains: id, email, user_metadata (like name from Google), etc.
   user: User | null
 
   // The current session (null if not logged in)
-  // Contains: access_token, refresh_token, expires_at, etc.
   session: Session | null
 
-  // True while we're checking if there's an existing session on app load
-  // Important: prevents flash of wrong UI (e.g., showing login form then immediately redirecting)
+  // The current user's profile from profiles table
+  profile: Profile | null
+
+  // Auth status (replaces simple loading boolean)
+  authStatus: AuthStatus
+
+  // Profile onboarding status
+  profileStatus: ProfileStatus
+
+  // True while we're checking for existing session (convenience getter)
   loading: boolean
 
-  // Auth actions - these call the functions in authApi.ts
+  // True if session expired mid-use (for modal display)
+  sessionExpired: boolean
+
+  // Dismiss the session expired modal
+  dismissSessionExpired: () => void
+
+  // Refresh profile data (after username is set)
+  refreshProfile: () => Promise<void>
+
+  // Auth actions
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>
   signUp: (email: string, password: string) => Promise<{ error: Error | null }>
   signInWithGoogle: () => Promise<{ error: Error | null }>

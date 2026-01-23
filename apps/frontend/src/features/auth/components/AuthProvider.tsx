@@ -1,6 +1,7 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
+import { createContext, useContext, useEffect, useState, useCallback, type ReactNode } from 'react'
 import type { Session, User } from '@supabase/supabase-js'
-import type { AuthContextType } from '../types'
+import type { AuthContextType, AuthStatus, ProfileStatus } from '../types'
+import type { Profile } from '../api/profilesApi'
 import {
   signInWithPassword,
   signUpWithPassword,
@@ -11,70 +12,127 @@ import {
   onAuthStateChange,
   getSession,
 } from '../api/authApi'
+import { getProfile, updateLastLogin, isProfileComplete } from '../api/profilesApi'
+import SessionExpiredModal from './SessionExpiredModal'
 
-// Create the context with undefined as initial value
-// We'll throw an error if someone tries to use it outside of AuthProvider
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
-// Props for the provider component
 interface AuthProviderProps {
   children: ReactNode
 }
 
-/**
- * AuthProvider - Wraps your app and provides auth state to all components
- *
- * How it works:
- * 1. On mount, it checks for an existing session (user might already be logged in)
- * 2. It subscribes to auth state changes (login, logout, token refresh, etc.)
- * 3. It exposes user, session, loading, and auth methods via context
- * 4. Any component can access this via the useAuth() hook
- */
 export function AuthProvider({ children }: AuthProviderProps) {
-  // State for the current user and session
+  // Core auth state
   const [user, setUser] = useState<User | null>(null)
   const [session, setSession] = useState<Session | null>(null)
+  const [profile, setProfile] = useState<Profile | null>(null)
 
-  // Loading state - true until we've checked for an existing session
-  // This prevents showing login form briefly before recognizing user is logged in
-  const [loading, setLoading] = useState(true)
+  // Status states
+  const [authStatus, setAuthStatus] = useState<AuthStatus>('checking_session')
+  const [profileStatus, setProfileStatus] = useState<ProfileStatus>('loading')
+
+  // Session expiry modal state
+  const [sessionExpired, setSessionExpired] = useState(false)
+
+  // Track if user was previously authenticated (for detecting session expiry)
+  const [wasAuthenticated, setWasAuthenticated] = useState(false)
+
+  // Fetch profile for a user
+  const fetchProfile = useCallback(async (userId: string) => {
+    setProfileStatus('loading')
+
+    const { profile: fetchedProfile, error } = await getProfile(userId)
+
+    if (error) {
+      console.error('Failed to fetch profile:', error)
+      setProfile(null)
+      setProfileStatus('incomplete')
+      return
+    }
+
+    setProfile(fetchedProfile)
+
+    // Determine profile status based on completion (custom username + name)
+    if (isProfileComplete(fetchedProfile)) {
+      setProfileStatus('complete')
+    } else {
+      setProfileStatus('incomplete')
+    }
+  }, [])
+
+  // Refresh profile (callable from outside, e.g., after setting username)
+  const refreshProfile = useCallback(async () => {
+    if (user?.id) {
+      await fetchProfile(user.id)
+    }
+  }, [user?.id, fetchProfile])
+
+  // Dismiss session expired modal
+  const dismissSessionExpired = useCallback(() => {
+    setSessionExpired(false)
+  }, [])
 
   useEffect(() => {
     // Check for existing session on mount
-    // This handles the case where user refreshes the page while logged in
-    getSession().then(({ session }) => {
+    getSession().then(async ({ session }) => {
       setSession(session)
       setUser(session?.user ?? null)
-      setLoading(false)
 
-      // Log for debugging (as mentioned in the phase doc)
+      if (session?.user) {
+        setAuthStatus('authenticated')
+        setWasAuthenticated(true)
+        await fetchProfile(session.user.id)
+
+        // Update last login timestamp
+        updateLastLogin(session.user.id)
+      } else {
+        setAuthStatus('unauthenticated')
+        setProfileStatus('loading')
+      }
+
       console.log('Initial session check:', session ? 'User exists' : 'No user')
     })
 
     // Subscribe to auth state changes
-    // This handles: login, logout, token refresh, password reset, etc.
-    const unsubscribe = onAuthStateChange((event, session) => {
+    const unsubscribe = onAuthStateChange(async (event, session) => {
       console.log('Auth event:', event)
 
       setSession(session)
       setUser(session?.user ?? null)
 
-      // Only set loading to false after we've processed the initial session
-      // (getSession above handles the initial load)
-      if (event === 'SIGNED_IN' || event === 'SIGNED_OUT') {
-        setLoading(false)
+      if (event === 'SIGNED_IN' && session?.user) {
+        setAuthStatus('authenticated')
+        setWasAuthenticated(true)
+        await fetchProfile(session.user.id)
+
+        // Update last login timestamp
+        updateLastLogin(session.user.id)
+      }
+
+      if (event === 'SIGNED_OUT') {
+        // Check if this was an unexpected sign out (session expiry)
+        if (wasAuthenticated) {
+          setSessionExpired(true)
+        }
+
+        setAuthStatus('unauthenticated')
+        setProfile(null)
+        setProfileStatus('loading')
+        setWasAuthenticated(false)
+      }
+
+      if (event === 'TOKEN_REFRESHED') {
+        // Session was refreshed, keep current state
+        console.log('Token refreshed successfully')
       }
     })
 
-    // Cleanup subscription when component unmounts
     return () => {
       unsubscribe()
     }
-  }, [])
+  }, [fetchProfile, wasAuthenticated])
 
-  // Wrapper functions that call the API and return a consistent shape
-  // These make it easier for components to handle errors
-
+  // Auth action wrappers
   const signIn = async (email: string, password: string) => {
     const { error } = await signInWithPassword(email, password)
     return { error: error ? new Error(error.message) : null }
@@ -91,6 +149,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
   }
 
   const signOut = async () => {
+    // Intentional sign out - don't show expired modal
+    setWasAuthenticated(false)
     const { error } = await signOutApi()
     return { error: error ? new Error(error.message) : null }
   }
@@ -105,11 +165,16 @@ export function AuthProvider({ children }: AuthProviderProps) {
     return { error: error ? new Error(error.message) : null }
   }
 
-  // The value that will be available to all components via useAuth()
   const value: AuthContextType = {
     user,
     session,
-    loading,
+    profile,
+    authStatus,
+    profileStatus,
+    loading: authStatus === 'checking_session',
+    sessionExpired,
+    dismissSessionExpired,
+    refreshProfile,
     signIn,
     signUp,
     signInWithGoogle,
@@ -118,17 +183,17 @@ export function AuthProvider({ children }: AuthProviderProps) {
     updatePassword,
   }
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
+  return (
+    <AuthContext.Provider value={value}>
+      {children}
+      <SessionExpiredModal
+        isOpen={sessionExpired}
+        onClose={dismissSessionExpired}
+      />
+    </AuthContext.Provider>
+  )
 }
 
-/**
- * useAuth - Hook to access auth state and methods from any component
- *
- * Usage:
- *   const { user, signIn, signOut } = useAuth()
- *
- * Throws an error if used outside of AuthProvider
- */
 export function useAuth() {
   const context = useContext(AuthContext)
 

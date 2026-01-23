@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { getTests } from '../api/testsApi'
 import type { Test } from '../types'
 
@@ -9,6 +10,7 @@ import type { Test } from '../types'
  * For now, clicking a test just logs to console - we'll add navigation later.
  */
 export default function TestsTab() {
+  const navigate = useNavigate()
   const [tests, setTests] = useState<Test[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -75,15 +77,12 @@ export default function TestsTab() {
         {tests.map((test) => (
           <button
             key={test.id}
-            onClick={() => {
-              // TODO: Navigate to test page
-              console.log('Selected test:', test.slug)
-            }}
+            onClick={() => navigate(`/app/learn/test/${test.slug}`)}
             className="w-full text-left bg-white border border-gray-200 rounded-lg p-6 hover:border-blue-300 hover:shadow-sm transition-all"
           >
             <h3 className="text-lg font-semibold text-gray-900">{test.title}</h3>
             <p className="mt-1 text-sm text-gray-500">
-              Slug: {test.slug}
+              Click to start test
             </p>
           </button>
         ))}
