@@ -13,16 +13,6 @@ type AuthView = "login" | "signup" | "forgot-password";
  * - Toggle buttons at the top to switch between Login and Signup
  * - Renders the appropriate form based on current view
  * - Handles "Forgot password?" flow
- *
- * Layout:
- * ┌─────────────────────────────────────┐
- * │  [Log in]  [Sign up]               │  ← Toggle buttons
- * ├─────────────────────────────────────┤
- * │                                     │
- * │   LoginForm / SignupForm /         │  ← Current form
- * │   ForgotPassword                   │
- * │                                     │
- * └─────────────────────────────────────┘
  */
 export default function AuthSection() {
   const [currentView, setCurrentView] = useState<AuthView>("login");
@@ -40,47 +30,47 @@ export default function AuthSection() {
   return (
     <section className="px-6 py-12">
       <div className="w-full max-w-md mx-auto">
-      {/* Only show toggle buttons for login/signup views */}
-      {currentView !== "forgot-password" && (
-        <div className="flex mb-6">
-          {/* Login tab */}
-          <button
-            type="button"
-            onClick={() => setCurrentView("login")}
-            className={`flex-1 py-2 text-center font-medium border-b-2 transition-colors ${
-              currentView === "login"
-                ? "border-blue-600 text-blue-600"
-                : "border-transparent text-gray-500 hover:text-gray-700"
-            }`}
-          >
-            Log in
-          </button>
+        {/* Only show toggle buttons for login/signup views */}
+        {currentView !== "forgot-password" && (
+          <div className="flex mb-6">
+            {/* Login tab */}
+            <button
+              type="button"
+              onClick={() => setCurrentView("login")}
+              className={`flex-1 py-2 text-center font-medium border-b-2 transition-colors ${
+                currentView === "login"
+                  ? "border-blue-600 text-blue-600"
+                  : "border-transparent text-gray-500 hover:text-gray-700"
+              }`}
+            >
+              Log in
+            </button>
 
-          {/* Signup tab */}
-          <button
-            type="button"
-            onClick={() => setCurrentView("signup")}
-            className={`flex-1 py-2 text-center font-medium border-b-2 transition-colors ${
-              currentView === "signup"
-                ? "border-blue-600 text-blue-600"
-                : "border-transparent text-gray-500 hover:text-gray-700"
-            }`}
-          >
-            Sign up
-          </button>
-        </div>
-      )}
+            {/* Signup tab */}
+            <button
+              type="button"
+              onClick={() => setCurrentView("signup")}
+              className={`flex-1 py-2 text-center font-medium border-b-2 transition-colors ${
+                currentView === "signup"
+                  ? "border-blue-600 text-blue-600"
+                  : "border-transparent text-gray-500 hover:text-gray-700"
+              }`}
+            >
+              Sign up
+            </button>
+          </div>
+        )}
 
-      {/* Render the appropriate form */}
-      {currentView === "login" && (
-        <LoginForm onForgotPassword={handleForgotPassword} />
-      )}
+        {/* Render the appropriate form */}
+        {currentView === "login" && (
+          <LoginForm onForgotPassword={handleForgotPassword} />
+        )}
 
-      {currentView === "signup" && <SignupForm />}
+        {currentView === "signup" && <SignupForm />}
 
-      {currentView === "forgot-password" && (
-        <ForgotPassword onBackToLogin={handleBackToLogin} />
-      )}
+        {currentView === "forgot-password" && (
+          <ForgotPassword onBackToLogin={handleBackToLogin} />
+        )}
       </div>
     </section>
   );

@@ -10,12 +10,9 @@ interface RequireAuthProps {
  * Auth guard for protected routes.
  *
  * Checks auth state and:
- * 1. Shows skeleton while checking session
+ * 1. Shows loading state while checking session
  * 2. Redirects to landing if unauthenticated
  * 3. Renders protected content if authenticated
- *
- * Note: Username gate (for username_missing) is handled separately
- * to allow users to reach the dashboard before completing onboarding.
  */
 export default function RequireAuth({ children }: RequireAuthProps) {
   const { authStatus } = useAuth();

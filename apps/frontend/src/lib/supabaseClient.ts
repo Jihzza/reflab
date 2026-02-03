@@ -22,13 +22,24 @@ if (!supabaseUrl || !supabaseAnonKey) {
 // - File storage (coming in later phases)
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
+    // CRITICAL: Enable explicit PKCE flow for security
+    // PKCE (Proof Key for Code Exchange) prevents authorization code interception
+    flowType: 'pkce',
+
     // Where to store the session (localStorage persists across browser sessions)
     persistSession: true,
+    storage: typeof window !== 'undefined' ? window.localStorage : undefined,
+    storageKey: 'supabase.auth.token',
 
     // Automatically refresh the token before it expires
     autoRefreshToken: true,
 
-    // Detect session from URL (needed for OAuth redirects and email confirmations)
+    // IMPORTANT: Keep this true for both OAuth and password reset flows
+    // OAuth: OAuthCallbackPage explicitly handles code exchange
+    // Password Reset: Automatically detects recovery session from URL hash
     detectSessionInUrl: true,
+
+    // Debug logging in development
+    debug: import.meta.env.DEV,
   },
 })
