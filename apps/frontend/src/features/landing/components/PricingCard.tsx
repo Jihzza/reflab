@@ -3,31 +3,26 @@
  *
  * Displays a single pricing tier with name, price, benefits, and CTA button.
  * Supports a highlighted variant for the recommended plan.
- *
- * Layout:
- * ┌─────────────────────────────┐
- * │         Plan Name           │
- * │        €XX / month          │
- * │  ─────────────────────────  │
- * │  ✓ Benefit 1                │
- * │  ✓ Benefit 2                │
- * │  ✓ Benefit 3                │
- * │  ─────────────────────────  │
- * │       [Subscribe]           │
- * └─────────────────────────────┘
+ * Shows monthly or yearly pricing based on the selected billing interval.
  */
 
 import type { PricingPlan } from "../types";
+import type { BillingInterval } from "@/features/billing/types";
 
 interface PricingCardProps {
-  /** The pricing plan data to display */
   plan: PricingPlan;
-  /** Callback when the CTA button is clicked */
+  billingInterval: BillingInterval;
   onSelect: (planId: string) => void;
+  loading?: boolean;
 }
 
-export default function PricingCard({ plan, onSelect }: PricingCardProps) {
-  const { id, name, pricePerMonth, benefits, isHighlighted, buttonText } = plan;
+export default function PricingCard({ plan, billingInterval, onSelect, loading }: PricingCardProps) {
+  const { id, name, pricePerMonth, pricePerYear, benefits, isHighlighted, buttonText } = plan;
+
+  const isYearly = billingInterval === "yearly";
+  const displayPrice = isYearly && pricePerYear > 0
+    ? (pricePerYear / 12).toFixed(2)
+    : pricePerMonth === 0 ? null : pricePerMonth.toFixed(2);
 
   return (
     <div
@@ -52,11 +47,20 @@ export default function PricingCard({ plan, onSelect }: PricingCardProps) {
 
       {/* Price display */}
       <div className="text-center mb-4">
-        <span className="text-3xl font-bold text-gray-700">
-          {pricePerMonth === 0 ? "Free" : `€${pricePerMonth}`}
-        </span>
-        {pricePerMonth > 0 && (
-          <span className="text-gray-500 text-sm"> / month</span>
+        {displayPrice === null ? (
+          <span className="text-3xl font-bold text-gray-700">Free</span>
+        ) : (
+          <>
+            <span className="text-3xl font-bold text-gray-700">
+              {"\u20AC"}{displayPrice}
+            </span>
+            <span className="text-gray-500 text-sm"> / month</span>
+            {isYearly && pricePerYear > 0 && (
+              <p className="text-xs text-green-600 mt-1">
+                Billed {"\u20AC"}{pricePerYear.toFixed(2)}/year
+              </p>
+            )}
+          </>
         )}
       </div>
 
@@ -70,7 +74,6 @@ export default function PricingCard({ plan, onSelect }: PricingCardProps) {
             key={index}
             className="flex items-start gap-2 text-sm text-gray-600"
           >
-            {/* Checkmark icon */}
             <svg
               className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5"
               fill="currentColor"
@@ -91,9 +94,11 @@ export default function PricingCard({ plan, onSelect }: PricingCardProps) {
       {/* CTA button */}
       <button
         onClick={() => onSelect(id)}
+        disabled={loading}
         className={`
           w-full py-2 px-4 rounded-md font-medium transition-colors
           focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2
+          disabled:opacity-50 disabled:cursor-not-allowed
           ${
             isHighlighted
               ? "bg-blue-600 text-white hover:bg-blue-700"
@@ -101,7 +106,7 @@ export default function PricingCard({ plan, onSelect }: PricingCardProps) {
           }
         `}
       >
-        {buttonText}
+        {loading ? "Loading..." : buttonText}
       </button>
     </div>
   );

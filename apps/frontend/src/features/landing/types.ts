@@ -14,11 +14,14 @@ export interface PricingPlan {
   /** Unique identifier for the plan */
   id: string;
 
-  /** Display name (e.g., "Free", "Pro", "Enterprise") */
+  /** Display name (e.g., "Free", "Standard", "Pro") */
   name: string;
 
   /** Monthly price in euros (0 for free tier) */
   pricePerMonth: number;
+
+  /** Yearly price in euros (0 for free tier) */
+  pricePerYear: number;
 
   /** List of features/benefits included in this plan */
   benefits: string[];
@@ -26,6 +29,6 @@ export interface PricingPlan {
   /** Whether this plan is highlighted/recommended */
   isHighlighted?: boolean;
 
-  /** Button text (e.g., "Get Started", "Subscribe", "Contact Us") */
+  /** Button text (e.g., "Get Started", "Subscribe") */
   buttonText: string;
 }

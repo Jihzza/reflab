@@ -9,6 +9,7 @@ export interface Notification {
   read: boolean
   dismissed_permanently: boolean
   next_reminder_at: string | null
+  metadata: Record<string, unknown> | null
   created_at: string
   updated_at: string
 }

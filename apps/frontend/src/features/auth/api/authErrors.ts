@@ -6,41 +6,42 @@
  * with a type-safe, centralized error classification system.
  */
 
-import type { AuthError as SupabaseAuthError } from '@supabase/supabase-js';
 
-// Error kind enum for type-safe error handling
-export enum AuthErrorKind {
+// Error kind constants for type-safe error handling
+export const AuthErrorKind = {
   // Authentication errors
-  INVALID_CREDENTIALS = 'invalid_credentials',
-  USER_EXISTS = 'user_exists',
-  WEAK_PASSWORD = 'weak_password',
+  INVALID_CREDENTIALS: 'invalid_credentials',
+  USER_EXISTS: 'user_exists',
+  WEAK_PASSWORD: 'weak_password',
 
   // Session errors
-  SESSION_EXPIRED = 'session_expired',
-  INVALID_TOKEN = 'invalid_token',
+  SESSION_EXPIRED: 'session_expired',
+  INVALID_TOKEN: 'invalid_token',
 
   // Rate limiting
-  RATE_LIMITED = 'rate_limited',
+  RATE_LIMITED: 'rate_limited',
 
   // Network errors
-  NETWORK_ERROR = 'network_error',
-  TIMEOUT = 'timeout',
+  NETWORK_ERROR: 'network_error',
+  TIMEOUT: 'timeout',
 
   // Validation errors
-  INVALID_EMAIL = 'invalid_email',
-  INVALID_PASSWORD = 'invalid_password',
+  INVALID_EMAIL: 'invalid_email',
+  INVALID_PASSWORD: 'invalid_password',
 
   // OAuth errors
-  OAUTH_ERROR = 'oauth_error',
-  OAUTH_CANCELLED = 'oauth_cancelled',
+  OAUTH_ERROR: 'oauth_error',
+  OAUTH_CANCELLED: 'oauth_cancelled',
 
   // Username/profile errors
-  USERNAME_TAKEN = 'username_taken',
-  USERNAME_INVALID = 'username_invalid',
+  USERNAME_TAKEN: 'username_taken',
+  USERNAME_INVALID: 'username_invalid',
 
   // Generic
-  UNKNOWN = 'unknown',
-}
+  UNKNOWN: 'unknown',
+} as const;
+
+export type AuthErrorKind = (typeof AuthErrorKind)[keyof typeof AuthErrorKind];
 
 // Typed error information
 export interface ClassifiedError {

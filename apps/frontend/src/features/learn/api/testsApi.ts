@@ -1,4 +1,6 @@
 import { supabase } from '@/lib/supabaseClient'
+import { PLANS } from '@/config/plans'
+import type { PlanName } from '@/features/billing/types'
 import type { Test, TestQuestion, TestAttempt, TestAttemptAnswer, OptionLetter } from '../types'
 
 /**
@@ -48,12 +50,57 @@ export async function getQuestions(testId: string) {
 }
 
 /**
+ * Check if the user can take a new test based on their plan limits.
+ * Returns { allowed, testsUsed, limit } or throws if not allowed.
+ */
+export async function checkTestAccess(userId: string): Promise<{
+  allowed: boolean
+  testsUsed: number
+  limit: number
+}> {
+  // Get user's plan from subscriptions table
+  const { data: subscription } = await supabase
+    .from('subscriptions')
+    .select('plan_name')
+    .eq('user_id', userId)
+    .in('status', ['active', 'trialing'])
+    .maybeSingle()
+
+  const plan: PlanName = (subscription?.plan_name as PlanName) ?? 'free'
+  const limit = PLANS[plan].testsPerMonth
+
+  // Unlimited plan → always allowed
+  if (limit === Infinity) {
+    return { allowed: true, testsUsed: 0, limit }
+  }
+
+  // Count submitted tests this calendar month
+  const now = new Date()
+  const monthStart = new Date(Date.UTC(now.getFullYear(), now.getMonth(), 1)).toISOString()
+
+  const { count, error } = await supabase
+    .from('test_attempts')
+    .select('*', { count: 'exact', head: true })
+    .eq('user_id', userId)
+    .eq('status', 'submitted')
+    .gte('submitted_at', monthStart)
+
+  if (error) {
+    console.error('[checkTestAccess] Error:', error)
+  }
+
+  const testsUsed = count ?? 0
+  return { allowed: testsUsed < limit, testsUsed, limit }
+}
+
+/**
  * Get or create an attempt for a test
  *
  * Logic:
- * 1. Check if user has an existing "in_progress" attempt for this test
- * 2. If yes, return it (allows resuming)
- * 3. If no, create a new attempt
+ * 1. Check feature access (plan test limits)
+ * 2. Check if user has an existing "in_progress" attempt for this test
+ * 3. If yes, return it (allows resuming)
+ * 4. If no, create a new attempt
  *
  * This ensures users can pause and resume tests
  */
@@ -65,7 +112,7 @@ export async function getOrCreateAttempt(testId: string) {
     return { data: null, error: new Error('Not authenticated') }
   }
 
-  // Check for existing in-progress attempt
+  // Check for existing in-progress attempt (always allow resuming)
   const { data: existingAttempt, error: fetchError } = await supabase
     .from('test_attempts')
     .select('*')
@@ -74,14 +121,25 @@ export async function getOrCreateAttempt(testId: string) {
     .eq('status', 'in_progress')
     .single()
 
-  // If found, return it
+  // If found, return it (resume - no limit check needed)
   if (existingAttempt) {
     return { data: existingAttempt as TestAttempt, error: null }
   }
 
-  // If not found (PGRST116 = no rows), create a new one
+  // If not found (PGRST116 = no rows), check limits before creating new
   if (fetchError && fetchError.code !== 'PGRST116') {
     return { data: null, error: fetchError }
+  }
+
+  // Check test access limits before creating a new attempt
+  const access = await checkTestAccess(user.id)
+  if (!access.allowed) {
+    return {
+      data: null,
+      error: new Error(
+        `You've reached your monthly test limit (${access.testsUsed}/${access.limit}). Upgrade your plan for more tests.`
+      ),
+    }
   }
 
   // Create new attempt

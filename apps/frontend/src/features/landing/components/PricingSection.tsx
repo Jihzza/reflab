@@ -2,36 +2,25 @@
  * PricingSection - Swiper carousel displaying pricing plans
  *
  * Uses Swiper library to create an infinite carousel of pricing cards.
- *
- * Carousel behavior:
- * - Infinite loop (cards cycle continuously)
- * - 1.5 slides visible (1 full center + half of adjacent cards)
- * - Auto-slide enabled (3.5 second intervals)
- * - Touch/swipe & drag enabled for mobile and desktop
- * - Centered slides for better visual effect
- * - Smooth 500ms transitions
- *
- * Layout:
- * ┌─────────────────────────────────────────────────┐
- * │              "Choose Your Plan"                 │
- * │  ┌──────┐  ┌────────────┐  ┌──────┐            │
- * │  │ half │  │   center   │  │ half │            │
- * │  │      │  │   (full)   │  │      │            │
- * │  └──────┘  └────────────┘  └──────┘            │
- * └─────────────────────────────────────────────────┘
+ * Includes a monthly/yearly billing toggle.
+ * Subscribe buttons redirect to Stripe Checkout (if logged in) or signup (if not).
  */
 
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Autoplay } from "swiper/modules";
 import PricingCard from "./PricingCard";
+import { useAuth } from "@/features/auth/components/AuthProvider";
+import { createCheckoutSession } from "@/features/billing/api/billingApi";
 import type { PricingPlan } from "../types";
+import type { BillingInterval } from "@/features/billing/types";
 
 // Import Swiper core styles
 import "swiper/css";
 
 /**
  * Custom styles to ensure slides are always visible.
- * Swiper's default loop behavior can hide slides during transitions.
  */
 const swiperStyles = `
   .pricing-swiper .swiper-slide {
@@ -48,31 +37,32 @@ const swiperStyles = `
 /**
  * Pricing plans data
  *
- * Three tiers: Free, Pro (highlighted), and Enterprise
- * Prices are in EUR per month
+ * Three tiers: Free, Standard (highlighted), and Pro
+ * Prices are in EUR
  */
 const PRICING_PLANS: PricingPlan[] = [
   {
     id: "free",
     name: "Free",
     pricePerMonth: 0,
+    pricePerYear: 0,
     benefits: [
+      "3 tests per month",
       "Access to basic Laws of the Game content",
-      "Limited practice quizzes",
       "Community forum access",
       "Weekly newsletter",
     ],
     buttonText: "Get Started",
   },
   {
-    id: "pro",
-    name: "Pro",
-    pricePerMonth: 9,
+    id: "standard",
+    name: "Standard",
+    pricePerMonth: 9.99,
+    pricePerYear: 95.88,
     benefits: [
+      "15 tests per month",
       "Everything in Free",
-      "Full video scenario library",
       "AI-powered feedback on decisions",
-      "Personalized training plans",
       "Progress tracking & analytics",
       "Priority support",
     ],
@@ -80,49 +70,112 @@ const PRICING_PLANS: PricingPlan[] = [
     buttonText: "Subscribe",
   },
   {
-    id: "enterprise",
-    name: "Enterprise",
-    pricePerMonth: 49,
+    id: "pro",
+    name: "Pro",
+    pricePerMonth: 19.99,
+    pricePerYear: 191.88,
     benefits: [
-      "Everything in Pro",
-      "Team management dashboard",
-      "Custom training programs",
-      "API access for integrations",
-      "Dedicated account manager",
-      "SLA guarantees",
+      "Unlimited tests",
+      "Everything in Standard",
+      "Advanced analytics",
+      "Early access to new features",
+      "Dedicated support",
     ],
-    buttonText: "Contact Us",
+    buttonText: "Subscribe",
   },
 ];
 
 /**
- * Duplicate plans array to ensure smooth infinite loop.
- * Swiper requires more slides than slidesPerView for proper loop behavior.
- * With slidesPerView: 1.5, we need at least 6 slides for seamless looping.
+ * Duplicate plans array for smooth infinite Swiper loop.
  */
 const CAROUSEL_SLIDES = [...PRICING_PLANS, ...PRICING_PLANS];
 
 export default function PricingSection() {
+  const navigate = useNavigate();
+  const { authStatus } = useAuth();
+  const [billingInterval, setBillingInterval] = useState<BillingInterval>("monthly");
+  const [loading, setLoading] = useState<string | null>(null);
+
+  const isLoggedIn = authStatus === "authenticated";
+
   /**
    * Handle plan selection
-   * Currently logs to console - implement checkout/signup flow as needed
    */
-  const handlePlanSelect = (planId: string) => {
-    // Extract the actual plan ID (remove the duplicate suffix if present)
+  const handlePlanSelect = async (planId: string) => {
+    // Extract actual plan ID (remove Swiper duplicate suffix)
     const actualPlanId = planId.replace(/-\d+$/, "");
-    console.log("Selected plan:", actualPlanId);
-    // TODO: Navigate to checkout or show signup modal
+
+    // Free plan → just sign up or go to dashboard
+    if (actualPlanId === "free") {
+      if (isLoggedIn) {
+        navigate("/app/dashboard");
+      } else {
+        navigate("/");
+      }
+      return;
+    }
+
+    // Paid plans → need to be logged in
+    if (!isLoggedIn) {
+      // Redirect to landing page (which has signup) with a return hint
+      navigate("/?subscribe=" + actualPlanId);
+      return;
+    }
+
+    // Create checkout session
+    setLoading(actualPlanId);
+    const { data, error } = await createCheckoutSession(
+      actualPlanId as "standard" | "pro",
+      billingInterval
+    );
+
+    if (error || !data?.url) {
+      console.error("Checkout error:", error);
+      alert(error?.message || "Failed to start checkout. Please try again.");
+      setLoading(null);
+      return;
+    }
+
+    // Redirect to Stripe Checkout
+    window.location.href = data.url;
   };
 
   return (
-    <section className="py-12 overflow-hidden">
-      {/* Inject custom styles to keep slides always visible */}
+    <section id="pricing" className="py-12 overflow-hidden">
+      {/* Inject custom styles */}
       <style>{swiperStyles}</style>
 
       {/* Section title */}
-      <h2 className="text-2xl md:text-3xl font-bold text-gray-700 text-center mb-8 px-6">
+      <h2 className="text-2xl md:text-3xl font-bold text-gray-700 text-center mb-4 px-6">
         Choose Your Plan
       </h2>
+
+      {/* Billing interval toggle */}
+      <div className="flex justify-center mb-8">
+        <div className="inline-flex items-center bg-gray-100 rounded-full p-1">
+          <button
+            onClick={() => setBillingInterval("monthly")}
+            className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
+              billingInterval === "monthly"
+                ? "bg-white text-gray-900 shadow-sm"
+                : "text-gray-500 hover:text-gray-700"
+            }`}
+          >
+            Monthly
+          </button>
+          <button
+            onClick={() => setBillingInterval("yearly")}
+            className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
+              billingInterval === "yearly"
+                ? "bg-white text-gray-900 shadow-sm"
+                : "text-gray-500 hover:text-gray-700"
+            }`}
+          >
+            Yearly
+            <span className="ml-1 text-green-600 text-xs font-semibold">Save 20%</span>
+          </button>
+        </div>
+      </div>
 
       {/* Swiper carousel */}
       <Swiper
@@ -146,7 +199,12 @@ export default function PricingSection() {
       >
         {CAROUSEL_SLIDES.map((plan, index) => (
           <SwiperSlide key={`${plan.id}-${index}`} className="py-4">
-            <PricingCard plan={plan} onSelect={handlePlanSelect} />
+            <PricingCard
+              plan={plan}
+              billingInterval={billingInterval}
+              onSelect={handlePlanSelect}
+              loading={loading === plan.id}
+            />
           </SwiperSlide>
         ))}
       </Swiper>

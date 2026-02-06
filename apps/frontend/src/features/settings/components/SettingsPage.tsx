@@ -1,5 +1,6 @@
 import UsernameSettings from "./UsernameSettings";
 import PasswordSettings from "./PasswordSettings";
+import BillingSettings from "./BillingSettings";
 import DeleteAccountSettings from "./DeleteAccountSettings";
 
 /**
@@ -22,6 +23,9 @@ export default function SettingsPage() {
 
         {/* Password Settings */}
         <PasswordSettings />
+
+        {/* Billing & Subscription */}
+        <BillingSettings />
 
         {/* Delete Account Settings */}
         <DeleteAccountSettings />
