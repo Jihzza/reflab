@@ -52,6 +52,18 @@ export interface ClassifiedError {
   retryable: boolean; // Can user retry the operation?
 }
 
+type ErrorShape = {
+  status?: unknown;
+  code?: unknown;
+  name?: unknown;
+  message?: unknown;
+};
+
+function toErrorShape(error: unknown): ErrorShape {
+  if (typeof error === 'object' && error !== null) return error as ErrorShape;
+  return { message: error };
+}
+
 /**
  * Classify Supabase auth errors into typed error kinds
  * Uses error.status, error.code, and error.name (not string matching!)
@@ -62,7 +74,7 @@ export interface ClassifiedError {
  * @returns Classified error with user-friendly message
  */
 export function classifyAuthError(
-  error: any,
+  error: unknown,
   context?: 'login' | 'signup' | 'oauth' | 'password_reset' | 'password_update' | 'username_update'
 ): ClassifiedError {
   if (!error) {
@@ -74,53 +86,63 @@ export function classifyAuthError(
     };
   }
 
+  const err = toErrorShape(error);
+  const message =
+    typeof err.message === 'string'
+      ? err.message
+      : error instanceof Error
+        ? error.message
+        : typeof error === 'string'
+          ? error
+          : String(error);
+  const status = typeof err.status === 'number' ? err.status : undefined;
+  const code = typeof err.code === 'string' ? err.code : undefined;
+
   // 1. Check for HTTP status codes (most reliable)
-  if ('status' in error) {
-    // Rate limiting (HTTP 429)
-    if (error.status === 429) {
-      return {
-        kind: AuthErrorKind.RATE_LIMITED,
-        message: 'Too many attempts. Please wait a few minutes before trying again.',
-        technical: error.message,
-        retryable: false,
-        field: 'general',
-      };
-    }
+  if (status === 429) {
+    return {
+      kind: AuthErrorKind.RATE_LIMITED,
+      message: 'Too many attempts. Please wait a few minutes before trying again.',
+      technical: message,
+      retryable: false,
+      field: 'general',
+    };
+  }
 
-    // Unauthorized (HTTP 401)
-    if (error.status === 401) {
-      return {
-        kind: AuthErrorKind.INVALID_CREDENTIALS,
-        message: getGenericAuthMessage(context),
-        technical: error.message,
-        retryable: true,
-        field: 'general',
-      };
-    }
+  // Unauthorized (HTTP 401)
+  if (status === 401) {
+    return {
+      kind: AuthErrorKind.INVALID_CREDENTIALS,
+      message: getGenericAuthMessage(context),
+      technical: message,
+      retryable: true,
+      field: 'general',
+    };
+  }
 
-    // Conflict (HTTP 409) - Usually duplicate user
-    if (error.status === 409) {
-      return {
-        kind: AuthErrorKind.USER_EXISTS,
-        message: context === 'username_update'
+  // Conflict (HTTP 409) - Usually duplicate user
+  if (status === 409) {
+    return {
+      kind: AuthErrorKind.USER_EXISTS,
+      message:
+        context === 'username_update'
           ? 'Username is already taken'
           : 'An account with this email already exists',
-        technical: error.message,
-        retryable: false,
-        field: context === 'username_update' ? 'username' : 'email',
-      };
-    }
+      technical: message,
+      retryable: false,
+      field: context === 'username_update' ? 'username' : 'email',
+    };
   }
 
   // 2. Check for Supabase error codes (preferred over string matching)
-  if ('code' in error && typeof error.code === 'string') {
-    switch (error.code) {
+  if (code) {
+    switch (code) {
       case 'invalid_credentials':
       case 'invalid_grant':
         return {
           kind: AuthErrorKind.INVALID_CREDENTIALS,
           message: getGenericAuthMessage(context),
-          technical: error.message,
+          technical: message,
           retryable: true,
           field: 'general',
         };
@@ -130,7 +152,7 @@ export function classifyAuthError(
         return {
           kind: AuthErrorKind.USER_EXISTS,
           message: 'An account with this email already exists',
-          technical: error.message,
+          technical: message,
           retryable: false,
           field: 'email',
         };
@@ -139,7 +161,7 @@ export function classifyAuthError(
         return {
           kind: AuthErrorKind.WEAK_PASSWORD,
           message: 'Password is too weak. Please use a stronger password.',
-          technical: error.message,
+          technical: message,
           retryable: true,
           field: 'password',
         };
@@ -149,7 +171,7 @@ export function classifyAuthError(
         return {
           kind: AuthErrorKind.RATE_LIMITED,
           message: 'Too many attempts. Please wait a few minutes before trying again.',
-          technical: error.message,
+          technical: message,
           retryable: false,
           field: 'general',
         };
@@ -159,7 +181,7 @@ export function classifyAuthError(
         return {
           kind: AuthErrorKind.INVALID_EMAIL,
           message: 'Please enter a valid email address',
-          technical: error.message,
+          technical: message,
           retryable: true,
           field: 'email',
         };
@@ -169,7 +191,7 @@ export function classifyAuthError(
         return {
           kind: AuthErrorKind.SESSION_EXPIRED,
           message: 'Your session has expired. Please sign in again.',
-          technical: error.message,
+          technical: message,
           retryable: true,
           field: 'general',
         };
@@ -177,14 +199,14 @@ export function classifyAuthError(
   }
 
   // 3. Check for network errors
-  if (error.message) {
-    const msg = error.message.toLowerCase();
+  if (message) {
+    const msg = message.toLowerCase();
 
     if (msg.includes('failed to fetch') || msg.includes('network error') || msg.includes('network request failed')) {
       return {
         kind: AuthErrorKind.NETWORK_ERROR,
         message: 'Network error. Please check your connection and try again.',
-        technical: error.message,
+        technical: message,
         retryable: true,
         field: 'general',
       };
@@ -194,7 +216,7 @@ export function classifyAuthError(
       return {
         kind: AuthErrorKind.TIMEOUT,
         message: 'Request timed out. Please try again.',
-        technical: error.message,
+        technical: message,
         retryable: true,
         field: 'general',
       };
@@ -203,15 +225,15 @@ export function classifyAuthError(
 
   // 4. Fallback: pattern matching as last resort (for backwards compatibility)
   // Prefer error codes above!
-  if (error.message) {
-    const msg = error.message.toLowerCase();
+  if (message) {
+    const msg = message.toLowerCase();
 
     // Invalid credentials patterns
     if (msg.includes('invalid login') || msg.includes('invalid credentials') || msg.includes('invalid email or password')) {
       return {
         kind: AuthErrorKind.INVALID_CREDENTIALS,
         message: getGenericAuthMessage(context),
-        technical: error.message,
+        technical: message,
         retryable: true,
         field: 'general',
       };
@@ -222,7 +244,7 @@ export function classifyAuthError(
       return {
         kind: AuthErrorKind.USER_EXISTS,
         message: 'An account with this email already exists',
-        technical: error.message,
+        technical: message,
         retryable: false,
         field: 'email',
       };
@@ -233,7 +255,7 @@ export function classifyAuthError(
       return {
         kind: AuthErrorKind.USERNAME_TAKEN,
         message: 'Username is already taken',
-        technical: error.message,
+        technical: message,
         retryable: false,
         field: 'username',
       };
@@ -244,7 +266,7 @@ export function classifyAuthError(
       return {
         kind: AuthErrorKind.SESSION_EXPIRED,
         message: 'Your session has expired. Please sign in again.',
-        technical: error.message,
+        technical: message,
         retryable: true,
         field: 'general',
       };
@@ -255,7 +277,7 @@ export function classifyAuthError(
       return {
         kind: AuthErrorKind.OAUTH_ERROR,
         message: 'Authentication failed. Please try again.',
-        technical: error.message,
+        technical: message,
         retryable: true,
         field: 'general',
       };
@@ -266,7 +288,7 @@ export function classifyAuthError(
   return {
     kind: AuthErrorKind.UNKNOWN,
     message: 'Something went wrong. Please try again.',
-    technical: error.message || String(error),
+    technical: message,
     retryable: true,
     field: 'general',
   };
@@ -316,7 +338,7 @@ export function errorToFormErrors(error: ClassifiedError): {
   confirmPassword?: string;
   general?: string;
 } {
-  const errors: any = {};
+  const errors: Record<string, string> = {};
 
   if (error.field && error.message) {
     errors[error.field] = error.message;

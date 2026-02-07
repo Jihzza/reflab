@@ -31,9 +31,10 @@ export interface TestAttempt {
   id: string
   user_id: string
   test_id: string
-  status: 'in_progress' | 'submitted'
+  status: 'in_progress' | 'submitted' | 'abandoned'
   started_at: string
   submitted_at: string | null
+  abandoned_at: string | null
   score_correct: number | null
   score_total: number | null
   score_percent: number | null
@@ -48,12 +49,38 @@ export interface TestAttemptAnswer {
   selected_option: 'A' | 'B' | 'C' | 'D'
   is_correct: boolean | null
   confirmed_at: string
-  ai_explanation: string | null
-  ai_explanation_created_at: string | null
+  updated_at: string
 }
 
 // Helper type for option letters
 export type OptionLetter = 'A' | 'B' | 'C' | 'D'
+
+export interface AttemptHistoryItem {
+  attempt: TestAttempt
+  test: Pick<Test, 'id' | 'slug' | 'title'>
+}
+
+// A standalone practice question (outside of tests)
+export interface PracticeQuestion {
+  id: string
+  question_text: string
+  option_a: string
+  option_b: string
+  option_c: string
+  option_d: string
+}
+
+// A user's attempt at a practice question
+export interface PracticeQuestionAttempt {
+  id: string
+  user_id: string
+  question_id: string
+  selected_option: OptionLetter
+  correct_option: OptionLetter
+  is_correct: boolean
+  answered_at: string
+  updated_at: string
+}
 
 // Tab options for the Learn page navigation
 export type LearnTab = 'tests' | 'questions' | 'videos' | 'course' | 'resources'

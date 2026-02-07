@@ -37,3 +37,23 @@ on conflict (test_id, order_index) do update set
   option_c = excluded.option_c,
   option_d = excluded.option_d,
   correct_option = excluded.correct_option;
+
+-- ============================================
+-- Practice questions (standalone)
+-- ============================================
+insert into public.practice_questions (
+  question_text, option_a, option_b, option_c, option_d, correct_option, is_active
+)
+select
+  'Practice: An assistant referee should signal offside when...',
+  'A player is in an offside position',
+  'A player in an offside position becomes involved in active play',
+  'The ball is played backwards',
+  'A player receives the ball from a throw-in',
+  'B',
+  true
+where not exists (
+  select 1
+  from public.practice_questions
+  where question_text = 'Practice: An assistant referee should signal offside when...'
+);

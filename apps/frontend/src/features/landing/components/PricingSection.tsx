@@ -11,7 +11,7 @@ import { useNavigate } from "react-router-dom";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Autoplay } from "swiper/modules";
 import PricingCard from "./PricingCard";
-import { useAuth } from "@/features/auth/components/AuthProvider";
+import { useAuth } from "@/features/auth/components/AuthContext";
 import { createCheckoutSession } from "@/features/billing/api/billingApi";
 import type { PricingPlan } from "../types";
 import type { BillingInterval } from "@/features/billing/types";
@@ -146,19 +146,19 @@ export default function PricingSection() {
       <style>{swiperStyles}</style>
 
       {/* Section title */}
-      <h2 className="text-2xl md:text-3xl font-bold text-gray-700 text-center mb-4 px-6">
+      <h2 className="rl-h2 text-center mb-4 px-6">
         Choose Your Plan
       </h2>
 
       {/* Billing interval toggle */}
       <div className="flex justify-center mb-8">
-        <div className="inline-flex items-center bg-gray-100 rounded-full p-1">
+        <div className="inline-flex items-center bg-[var(--bg-surface)] border border-[var(--border-subtle)] rounded-full p-1">
           <button
             onClick={() => setBillingInterval("monthly")}
             className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
               billingInterval === "monthly"
-                ? "bg-white text-gray-900 shadow-sm"
-                : "text-gray-500 hover:text-gray-700"
+                ? "bg-[var(--bg-surface-2)] text-[var(--text-primary)] border border-[rgba(246,194,28,0.55)]"
+                : "text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
             }`}
           >
             Monthly
@@ -167,12 +167,12 @@ export default function PricingSection() {
             onClick={() => setBillingInterval("yearly")}
             className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
               billingInterval === "yearly"
-                ? "bg-white text-gray-900 shadow-sm"
-                : "text-gray-500 hover:text-gray-700"
+                ? "bg-[var(--bg-surface-2)] text-[var(--text-primary)] border border-[rgba(246,194,28,0.55)]"
+                : "text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
             }`}
           >
             Yearly
-            <span className="ml-1 text-green-600 text-xs font-semibold">Save 20%</span>
+            <span className="ml-1 text-[var(--success)] text-xs font-semibold">Save 20%</span>
           </button>
         </div>
       </div>

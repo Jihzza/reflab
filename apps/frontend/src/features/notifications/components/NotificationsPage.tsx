@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useAuth } from '@/features/auth/components/AuthProvider'
+import { useAuth } from '@/features/auth/components/AuthContext'
 import {
   getActiveNotifications,
   markAsRead,
@@ -28,7 +28,6 @@ export default function NotificationsPage() {
   useEffect(() => {
     if (!user?.id) return
 
-    setLoading(true)
     getActiveNotifications(user.id).then(({ notifications: data }) => {
       setNotifications(data ?? [])
       setLoading(false)
@@ -60,52 +59,53 @@ export default function NotificationsPage() {
   if (loading) {
     return (
       <div className="p-4">
-        <h1 className="text-xl font-bold mb-4">Notifications</h1>
-        <p className="text-gray-500">Loading...</p>
+        <h1 className="rl-h2 mb-4">Notifications</h1>
+        <p className="text-[var(--text-muted)]">Loading...</p>
       </div>
     )
   }
 
   return (
     <div className="p-4">
-      <h1 className="text-xl font-bold mb-4">Notifications</h1>
+      <h1 className="rl-h2 mb-4">Notifications</h1>
 
       {/* Empty state */}
       {notifications.length === 0 ? (
-        <p className="text-gray-500">No notifications</p>
+        <p className="text-[var(--text-muted)]">No notifications</p>
       ) : (
         // Notification list
         <div className="space-y-3">
           {notifications.map((notification) => (
             <div
               key={notification.id}
-              className={`p-4 border rounded-lg ${
-                notification.read ? 'bg-gray-50' : 'bg-white'
-              }`}
+              className={[
+                'rl-card p-4',
+                notification.read ? 'opacity-80' : '!border-[rgba(246,194,28,0.45)]',
+              ].join(' ')}
             >
               {/* Notification content */}
               <h3 className="font-medium">{notification.title}</h3>
-              <p className="text-gray-600 text-sm mt-1">{notification.message}</p>
+              <p className="text-[var(--text-secondary)] text-sm mt-1">{notification.message}</p>
 
               {/* Action buttons */}
               <div className="flex gap-2 mt-3">
                 {!notification.read && (
                   <button
                     onClick={() => handleMarkAsRead(notification.id)}
-                    className="text-sm text-blue-600 hover:underline"
+                    className="text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:underline"
                   >
                     Mark as read
                   </button>
                 )}
                 <button
                   onClick={() => handleRemindLater(notification.id)}
-                  className="text-sm text-gray-600 hover:underline"
+                  className="text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:underline"
                 >
                   Remind me later
                 </button>
                 <button
                   onClick={() => handleDismiss(notification.id)}
-                  className="text-sm text-red-600 hover:underline"
+                  className="text-sm text-[var(--error)] hover:underline"
                 >
                   Don't remind again
                 </button>

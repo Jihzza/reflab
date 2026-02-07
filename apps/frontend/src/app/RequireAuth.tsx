@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { Navigate } from "react-router-dom";
-import { useAuth } from "@/features/auth/components/AuthProvider";
+import { useAuth } from "@/features/auth/components/AuthContext";
 
 interface RequireAuthProps {
   children: ReactNode;
@@ -21,7 +21,7 @@ export default function RequireAuth({ children }: RequireAuthProps) {
   if (authStatus === "checking_session") {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="text-gray-500">Loading...</div>
+        <div className="text-[var(--text-muted)]">Loading...</div>
       </div>
     );
   }

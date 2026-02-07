@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useAuth } from "@/features/auth/components/AuthProvider";
+import { useAuth } from "@/features/auth/components/AuthContext";
 import { getProfile, updateUsername } from "@/features/auth/api/profilesApi";
 import { classifyAuthError, logAuthError } from "@/features/auth/api/authErrors";
 
@@ -115,40 +115,40 @@ export default function UsernameSettings() {
 
   if (loadingProfile) {
     return (
-      <div className="bg-white rounded-lg shadow p-6">
-        <div className="text-center text-gray-500">Loading...</div>
+      <div className="rl-card p-6">
+        <div className="text-center text-[var(--text-muted)]">Loading...</div>
       </div>
     );
   }
 
   return (
-    <div className="bg-white rounded-lg shadow p-6">
-      <h2 className="text-lg font-semibold text-gray-800 mb-4">Change Username</h2>
+    <div className="rl-card p-6">
+      <h2 className="rl-h3 mb-4">Change Username</h2>
 
       {/* Current username display */}
-      <div className="mb-6 p-3 bg-gray-50 rounded border border-gray-200">
-        <p className="text-sm text-gray-600">Current username:</p>
-        <p className="text-lg font-medium text-gray-800">{currentUsername}</p>
+      <div className="mb-6 p-3 bg-[var(--bg-surface-2)] rounded-[var(--radius-input)] border border-[var(--border-subtle)]">
+        <p className="text-sm text-[var(--text-muted)]">Current username:</p>
+        <p className="text-lg font-semibold text-[var(--text-primary)]">{currentUsername}</p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
         {/* Success message */}
         {success && (
-          <div className="p-3 bg-green-50 border border-green-200 rounded text-sm text-green-700">
+          <div className="rl-alert rl-alert-success text-sm">
             Username updated successfully!
           </div>
         )}
 
         {/* General error message */}
         {errors.general && (
-          <div className="p-3 bg-red-50 border border-red-200 rounded text-sm text-red-700">
+          <div className="rl-alert rl-alert-error text-sm">
             {errors.general}
           </div>
         )}
 
         {/* New Username field */}
         <div>
-          <label htmlFor="new-username" className="block text-sm font-medium text-gray-700 mb-1">
+          <label htmlFor="new-username" className="rl-label">
             New Username
           </label>
           <input
@@ -156,22 +156,21 @@ export default function UsernameSettings() {
             type="text"
             value={newUsername}
             onChange={(e) => setNewUsername(e.target.value)}
-            className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 ${
-              errors.username
-                ? "border-red-300 focus:ring-red-500"
-                : "border-gray-300 focus:ring-blue-500"
-            }`}
+            className="rl-input"
             placeholder="3-30 characters (a-z, 0-9, _, .)"
+            aria-invalid={!!errors.username}
             disabled={loading}
           />
-          {errors.username && <p className="mt-1 text-sm text-red-600">{errors.username}</p>}
+          {errors.username && (
+            <p className="mt-1 text-sm text-[var(--error)]">{errors.username}</p>
+          )}
         </div>
 
         {/* Submit button */}
         <button
           type="submit"
           disabled={loading}
-          className="px-4 py-2 bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="rl-btn rl-btn-primary"
         >
           {loading ? "Updating..." : "Update Username"}
         </button>

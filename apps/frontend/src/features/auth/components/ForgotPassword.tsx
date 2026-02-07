@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useAuth } from "./AuthProvider";
+import { useAuth } from "./AuthContext";
 import { classifyAuthError, errorToFormErrors, logAuthError } from "../api/authErrors";
 import type { AuthFormErrors } from "../types";
 
@@ -73,13 +73,13 @@ export default function ForgotPassword({ onBackToLogin }: ForgotPasswordProps) {
       {success ? (
         // Success state
         <div className="space-y-4">
-          <div className="p-4 bg-green-50 border border-green-200 rounded text-sm text-green-700">
+          <div className="rl-alert rl-alert-success text-sm">
             If an account exists with this email, you will receive a password reset link shortly.
           </div>
           <button
             type="button"
             onClick={onBackToLogin}
-            className="w-full py-2 px-4 border border-gray-300 bg-white text-gray-700 font-medium rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+            className="rl-btn rl-btn-secondary w-full"
           >
             Back to login
           </button>
@@ -88,22 +88,22 @@ export default function ForgotPassword({ onBackToLogin }: ForgotPasswordProps) {
         // Form state
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="text-center mb-4">
-            <h2 className="text-xl font-semibold text-gray-800 mb-2">Reset your password</h2>
-            <p className="text-sm text-gray-600">
+            <h2 className="rl-h3 mb-2">Reset your password</h2>
+            <p className="text-sm text-[var(--text-secondary)]">
               Enter your email address and we'll send you a link to reset your password.
             </p>
           </div>
 
           {/* General error message */}
           {errors.general && (
-            <div className="p-3 bg-red-50 border border-red-200 rounded text-sm text-red-700">
+            <div className="rl-alert rl-alert-error text-sm">
               {errors.general}
             </div>
           )}
 
           {/* Email field */}
           <div>
-            <label htmlFor="reset-email" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="reset-email" className="rl-label">
               Email
             </label>
             <input
@@ -111,22 +111,19 @@ export default function ForgotPassword({ onBackToLogin }: ForgotPasswordProps) {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 ${
-                errors.email
-                  ? "border-red-300 focus:ring-red-500"
-                  : "border-gray-300 focus:ring-blue-500"
-              }`}
+              className="rl-input"
               placeholder="you@example.com"
+              aria-invalid={!!errors.email}
               disabled={loading}
             />
-            {errors.email && <p className="mt-1 text-sm text-red-600">{errors.email}</p>}
+            {errors.email && <p className="mt-1 text-sm text-[var(--error)]">{errors.email}</p>}
           </div>
 
           {/* Submit button */}
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-2 px-4 bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="rl-btn rl-btn-primary w-full"
           >
             {loading ? "Sending..." : "Send reset link"}
           </button>
@@ -135,7 +132,7 @@ export default function ForgotPassword({ onBackToLogin }: ForgotPasswordProps) {
           <button
             type="button"
             onClick={onBackToLogin}
-            className="w-full py-2 px-4 border border-gray-300 bg-white text-gray-700 font-medium rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+            className="rl-btn rl-btn-secondary w-full"
             disabled={loading}
           >
             Back to login

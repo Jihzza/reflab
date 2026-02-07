@@ -15,7 +15,7 @@ import PricingSection from "./PricingSection";
 
 export default function LandingPage() {
   return (
-    <main className="min-h-screen w-full bg-white">
+    <main className="min-h-screen w-full">
       {/* Hero: Logo, title, and value proposition */}
       <HeroSection />
 

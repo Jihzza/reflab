@@ -1,11 +1,10 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
 import type { User, Session } from "@supabase/supabase-js";
 import type { AuthContextType, AuthStatus } from "../types";
 import * as authApi from "../api/authApi";
 import SessionExpiredModal from "./SessionExpiredModal";
-
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+import { AuthContext } from "./AuthContext";
 
 interface AuthProviderProps {
   children: ReactNode;
@@ -171,16 +170,4 @@ export function AuthProvider({ children }: AuthProviderProps) {
       <SessionExpiredModal />
     </AuthContext.Provider>
   );
-}
-
-/**
- * Hook to access auth context
- * Must be used within AuthProvider
- */
-export function useAuth() {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error("useAuth must be used within an AuthProvider");
-  }
-  return context;
 }

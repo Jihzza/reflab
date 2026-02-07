@@ -15,7 +15,7 @@ import DeleteAccountSettings from "./DeleteAccountSettings";
 export default function SettingsPage() {
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold text-gray-900 mb-8">Account Settings</h1>
+      <h1 className="rl-h1 mb-8">Account Settings</h1>
 
       <div className="space-y-6">
         {/* Username Settings */}

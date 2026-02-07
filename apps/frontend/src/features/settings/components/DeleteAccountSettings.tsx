@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "@/features/auth/components/AuthProvider";
+import { useAuth } from "@/features/auth/components/AuthContext";
 import { deleteAccount } from "@/features/auth/api/accountApi";
 
 /**
@@ -51,15 +51,15 @@ export default function DeleteAccountSettings() {
   };
 
   return (
-    <div className="bg-white rounded-lg shadow p-6 border-2 border-red-200">
-      <h2 className="text-lg font-semibold text-red-600 mb-2">Danger Zone</h2>
-      <p className="text-sm text-gray-600 mb-4">
+    <div className="rl-card p-6 border border-[rgba(229,57,53,0.35)]">
+      <h2 className="rl-h3 text-[var(--error)] mb-2">Danger Zone</h2>
+      <p className="text-sm text-[var(--text-secondary)] mb-4">
         Once you delete your account, there is no going back. Please be certain.
       </p>
 
       {/* Error message */}
       {error && (
-        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded text-sm text-red-700">
+        <div className="mb-4 rl-alert rl-alert-error text-sm">
           {error}
         </div>
       )}
@@ -68,17 +68,17 @@ export default function DeleteAccountSettings() {
         // Delete button
         <button
           onClick={handleDeleteClick}
-          className="px-4 py-2 bg-red-600 text-white font-medium rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+          className="rl-btn rl-btn-danger"
         >
           Delete Account
         </button>
       ) : (
         // Confirmation dialog
-        <div className="bg-red-50 border border-red-300 rounded-lg p-4">
-          <h3 className="text-lg font-semibold text-red-800 mb-2">
+        <div className="rl-alert rl-alert-error">
+          <h3 className="text-lg font-semibold mb-2">
             Are you absolutely sure?
           </h3>
-          <p className="text-sm text-red-700 mb-4">
+          <p className="text-sm mb-4">
             This action cannot be undone. This will permanently delete your account and remove
             all of your data from our servers.
           </p>
@@ -87,14 +87,14 @@ export default function DeleteAccountSettings() {
             <button
               onClick={handleConfirmDelete}
               disabled={loading}
-              className="px-4 py-2 bg-red-600 text-white font-medium rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="rl-btn rl-btn-danger"
             >
               {loading ? "Deleting..." : "Yes, delete my account"}
             </button>
             <button
               onClick={handleCancel}
               disabled={loading}
-              className="px-4 py-2 border border-gray-300 bg-white text-gray-700 font-medium rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50"
+              className="rl-btn rl-btn-secondary"
             >
               Cancel
             </button>

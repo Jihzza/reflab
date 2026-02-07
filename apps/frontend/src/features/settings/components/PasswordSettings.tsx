@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useAuth } from "@/features/auth/components/AuthProvider";
+import { useAuth } from "@/features/auth/components/AuthContext";
 import { classifyAuthError, logAuthError } from "@/features/auth/api/authErrors";
 
 interface PasswordErrors {
@@ -78,27 +78,27 @@ export default function PasswordSettings() {
   };
 
   return (
-    <div className="bg-white rounded-lg shadow p-6">
-      <h2 className="text-lg font-semibold text-gray-800 mb-4">Change Password</h2>
+    <div className="rl-card p-6">
+      <h2 className="rl-h3 mb-4">Change Password</h2>
 
       <form onSubmit={handleSubmit} className="space-y-4">
         {/* Success message */}
         {success && (
-          <div className="p-3 bg-green-50 border border-green-200 rounded text-sm text-green-700">
+          <div className="rl-alert rl-alert-success text-sm">
             Password updated successfully!
           </div>
         )}
 
         {/* General error message */}
         {errors.general && (
-          <div className="p-3 bg-red-50 border border-red-200 rounded text-sm text-red-700">
+          <div className="rl-alert rl-alert-error text-sm">
             {errors.general}
           </div>
         )}
 
         {/* New Password field */}
         <div>
-          <label htmlFor="new-password" className="block text-sm font-medium text-gray-700 mb-1">
+          <label htmlFor="new-password" className="rl-label">
             New Password
           </label>
           <input
@@ -106,16 +106,13 @@ export default function PasswordSettings() {
             type="password"
             value={newPassword}
             onChange={(e) => setNewPassword(e.target.value)}
-            className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 ${
-              errors.newPassword
-                ? "border-red-300 focus:ring-red-500"
-                : "border-gray-300 focus:ring-blue-500"
-            }`}
+            className="rl-input"
             placeholder="At least 6 characters"
+            aria-invalid={!!errors.newPassword}
             disabled={loading}
           />
           {errors.newPassword && (
-            <p className="mt-1 text-sm text-red-600">{errors.newPassword}</p>
+            <p className="mt-1 text-sm text-[var(--error)]">{errors.newPassword}</p>
           )}
         </div>
 
@@ -123,7 +120,7 @@ export default function PasswordSettings() {
         <div>
           <label
             htmlFor="confirm-new-password"
-            className="block text-sm font-medium text-gray-700 mb-1"
+            className="rl-label"
           >
             Confirm New Password
           </label>
@@ -132,16 +129,13 @@ export default function PasswordSettings() {
             type="password"
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
-            className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 ${
-              errors.confirmPassword
-                ? "border-red-300 focus:ring-red-500"
-                : "border-gray-300 focus:ring-blue-500"
-            }`}
+            className="rl-input"
             placeholder="••••••••"
+            aria-invalid={!!errors.confirmPassword}
             disabled={loading}
           />
           {errors.confirmPassword && (
-            <p className="mt-1 text-sm text-red-600">{errors.confirmPassword}</p>
+            <p className="mt-1 text-sm text-[var(--error)]">{errors.confirmPassword}</p>
           )}
         </div>
 
@@ -149,7 +143,7 @@ export default function PasswordSettings() {
         <button
           type="submit"
           disabled={loading}
-          className="px-4 py-2 bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="rl-btn rl-btn-primary"
         >
           {loading ? "Updating..." : "Update Password"}
         </button>

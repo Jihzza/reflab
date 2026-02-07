@@ -39,7 +39,8 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     // Password Reset: Automatically detects recovery session from URL hash
     detectSessionInUrl: true,
 
-    // Debug logging in development
-    debug: import.meta.env.DEV,
+    // Supabase Auth debug logs are very noisy (GoTrueClient@supabase.com).
+    // Keep disabled by default; enable temporarily when debugging auth flows.
+    debug: false,
   },
 })

@@ -1,9 +1,17 @@
-import type { TestQuestion, OptionLetter } from '../types'
+import type { OptionLetter } from '../types'
+
+interface MultipleChoiceQuestion {
+  question_text: string
+  option_a: string
+  option_b: string
+  option_c: string
+  option_d: string
+}
 
 interface QuestionCardProps {
-  question: TestQuestion
-  questionNumber: number
-  totalQuestions: number
+  question: MultipleChoiceQuestion
+  questionNumber?: number
+  totalQuestions?: number
   selectedOption: OptionLetter | null
   onSelectOption: (option: OptionLetter) => void
   isLocked?: boolean // When answer is already submitted
@@ -31,16 +39,18 @@ export default function QuestionCard({
   ]
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 p-6">
+    <div className="rl-card p-6">
       {/* Question header */}
-      <div className="mb-4">
-        <span className="text-sm text-gray-500">
-          Question {questionNumber} of {totalQuestions}
-        </span>
-      </div>
+      {questionNumber && totalQuestions ? (
+        <div className="mb-4">
+          <span className="text-sm text-[var(--text-secondary)]">
+            Question {questionNumber} of {totalQuestions}
+          </span>
+        </div>
+      ) : null}
 
       {/* Question text */}
-      <h2 className="text-lg font-medium text-gray-900 mb-6">
+      <h2 className="text-lg font-semibold text-[var(--text-primary)] mb-6">
         {question.question_text}
       </h2>
 
@@ -55,10 +65,11 @@ export default function QuestionCard({
               onClick={() => !isLocked && onSelectOption(option.letter)}
               disabled={isLocked}
               className={`
-                w-full text-left p-4 rounded-lg border-2 transition-all
+                w-full text-left p-4 rounded-[var(--radius-input)] border transition-colors
+                focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(255,229,138,0.18)]
                 ${isSelected
-                  ? 'border-blue-500 bg-blue-50 text-blue-900'
-                  : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                  ? 'border-[var(--brand-yellow)] bg-[var(--brand-yellow-soft)] text-[#0b1020]'
+                  : 'border-[var(--border-subtle)] bg-[var(--bg-surface-2)] text-[var(--text-primary)] hover:brightness-110'
                 }
                 ${isLocked ? 'cursor-not-allowed opacity-75' : 'cursor-pointer'}
               `}

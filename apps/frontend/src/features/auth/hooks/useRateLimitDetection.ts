@@ -21,8 +21,8 @@ import { AuthErrorKind } from '../api/authErrors';
  * ```
  */
 export function useRateLimitDetection(cooldownDuration: number = 60) {
-  const [isRateLimited, setIsRateLimited] = useState(false);
   const [cooldownSeconds, setCooldownSeconds] = useState(0);
+  const isRateLimited = cooldownSeconds > 0;
 
   // Countdown timer
   useEffect(() => {
@@ -32,18 +32,14 @@ export function useRateLimitDetection(cooldownDuration: number = 60) {
       }, 1000);
 
       return () => clearTimeout(timer);
-    } else if (cooldownSeconds === 0 && isRateLimited) {
-      // Cooldown complete
-      setIsRateLimited(false);
     }
-  }, [cooldownSeconds, isRateLimited]);
+  }, [cooldownSeconds]);
 
   /**
    * Handle auth error - start cooldown if rate limited
    */
   const handleError = (errorKind: AuthErrorKind) => {
     if (errorKind === AuthErrorKind.RATE_LIMITED) {
-      setIsRateLimited(true);
       setCooldownSeconds(cooldownDuration);
     }
   };
@@ -52,7 +48,6 @@ export function useRateLimitDetection(cooldownDuration: number = 60) {
    * Manually reset rate limiting state
    */
   const reset = () => {
-    setIsRateLimited(false);
     setCooldownSeconds(0);
   };
 

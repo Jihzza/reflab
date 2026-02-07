@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getTests } from '../api/testsApi'
 import type { Test } from '../types'
+import TestListItem from './TestListItem'
 
 /**
  * TestsTab - Displays the list of available tests
@@ -40,9 +41,9 @@ export default function TestsTab() {
     return (
       <div className="p-6">
         <div className="animate-pulse space-y-4">
-          <div className="h-24 bg-gray-200 rounded-lg"></div>
-          <div className="h-24 bg-gray-200 rounded-lg"></div>
-          <div className="h-24 bg-gray-200 rounded-lg"></div>
+          <div className="h-24 bg-white/10 rounded-[var(--radius-card)]" />
+          <div className="h-24 bg-white/10 rounded-[var(--radius-card)]" />
+          <div className="h-24 bg-white/10 rounded-[var(--radius-card)]" />
         </div>
       </div>
     )
@@ -52,8 +53,8 @@ export default function TestsTab() {
   if (error) {
     return (
       <div className="p-6">
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-          <p className="text-red-700">Error loading tests: {error}</p>
+        <div className="rl-alert rl-alert-error">
+          <p>Error loading tests: {error}</p>
         </div>
       </div>
     )
@@ -64,7 +65,7 @@ export default function TestsTab() {
     return (
       <div className="p-6">
         <div className="text-center py-12">
-          <p className="text-gray-500">No tests available yet.</p>
+          <p className="text-[var(--text-muted)]">No tests available yet.</p>
         </div>
       </div>
     )
@@ -73,18 +74,22 @@ export default function TestsTab() {
   // Tests list
   return (
     <div className="p-6">
+      <div className="flex items-center justify-end mb-4">
+        <button
+          onClick={() => navigate('/app/learn/tests/history')}
+          className="text-sm font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:underline"
+        >
+          Test History
+        </button>
+      </div>
       <div className="grid gap-4">
         {tests.map((test) => (
-          <button
+          <TestListItem
             key={test.id}
+            title={test.title}
+            subtitle="Click to start test"
             onClick={() => navigate(`/app/learn/test/${test.slug}`)}
-            className="w-full text-left bg-white border border-gray-200 rounded-lg p-6 hover:border-blue-300 hover:shadow-sm transition-all"
-          >
-            <h3 className="text-lg font-semibold text-gray-900">{test.title}</h3>
-            <p className="mt-1 text-sm text-gray-500">
-              Click to start test
-            </p>
-          </button>
+          />
         ))}
       </div>
     </div>

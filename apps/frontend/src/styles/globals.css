@@ -1,56 +1,331 @@
 @import "tailwindcss";
 
-/**
- * Global Styles for RefLab
- *
- * Base styling for the application using Tailwind CSS.
- * Default theme: Light mode with white background.
- */
-
 :root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
+  /* RefLab Design Tokens (Dark mode default) */
+  --bg-primary: #14192c;
+  --bg-surface: #181f32;
+  --bg-surface-2: #18223a;
+  --border-subtle: #24304a;
 
-  /* Default to light theme */
-  color-scheme: light;
-  color: #213547;
-  background-color: #ffffff;
+  --text-primary: #f5f7fa;
+  --text-secondary: #b8c0d4;
+  --text-muted: #8a93a8;
 
+  --brand-yellow: #f6c21c;
+  --brand-yellow-soft: #ffe58a;
+  --brand-red: #e53935;
+
+  --success: #3ddc97;
+  --warning: #f6a821;
+  --error: #e53935;
+  --info: #4da3ff;
+
+  --font-sans: Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial,
+    "Apple Color Emoji", "Segoe UI Emoji";
+
+  /* Typography scale */
+  --text-display-size: 32px;
+  --text-display-line: 1.2;
+
+  --text-h2-size: 24px;
+  --text-h2-line: 1.3;
+
+  --text-h3-size: 20px;
+  --text-h3-line: 1.3;
+
+  --text-body-size: 16px;
+  --text-body-line: 1.5;
+
+  --text-small-size: 14px;
+  --text-small-line: 1.5;
+
+  --text-caption-size: 12px;
+  --text-caption-line: 1.4;
+
+  --text-metric-size: 28px;
+  --text-metric-line: 1.1;
+
+  /* Spacing scale */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --space-8: 32px;
+
+  /* Radius */
+  --radius-card: 16px;
+  --radius-button: 14px;
+  --radius-input: 12px;
+  --radius-pill: 999px;
+
+  /* Shadows */
+  --shadow-elev-1: 0 1px 0 rgba(255, 255, 255, 0.04) inset,
+    0 10px 28px rgba(0, 0, 0, 0.35);
+  --shadow-elev-2: 0 1px 0 rgba(255, 255, 255, 0.06) inset,
+    0 18px 50px rgba(0, 0, 0, 0.45);
+
+  color-scheme: dark;
+  font-family: var(--font-sans);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Link styles */
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
+html,
+body {
+  height: 100%;
 }
 
-a:hover {
-  color: #535bf2;
-}
-
-/* Body reset - full width layout support */
 body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
+  font-size: var(--text-body-size);
+  line-height: var(--text-body-line);
+  color: var(--text-primary);
+  background:
+    radial-gradient(900px circle at 18% -20%, rgba(77, 163, 255, 0.10), transparent 60%),
+    radial-gradient(900px circle at 80% 0%, rgba(61, 220, 151, 0.07), transparent 60%),
+    var(--bg-primary);
 }
 
-/* Dark mode support (optional) */
-@media (prefers-color-scheme: dark) {
-  :root {
-    color-scheme: dark;
-    color: rgba(255, 255, 255, 0.87);
-    background-color: #242424;
-  }
+#root {
+  min-height: 100%;
+}
 
-  a:hover {
-    color: #747bff;
-  }
+/* Default border color for Tailwind borders where no explicit color is set. */
+*,
+::before,
+::after {
+  border-color: var(--border-subtle);
+}
+
+a {
+  color: var(--info);
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-thickness: 2px;
+}
+
+::selection {
+  background: var(--brand-yellow);
+  color: #0b1020;
+}
+
+/* --- Text styles (Design Doc) --- */
+.rl-h1 {
+  font-size: var(--text-display-size);
+  line-height: var(--text-display-line);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.rl-h2 {
+  font-size: var(--text-h2-size);
+  line-height: var(--text-h2-line);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.rl-h3 {
+  font-size: var(--text-h3-size);
+  line-height: var(--text-h3-line);
+  font-weight: 600;
+}
+
+.rl-body {
+  font-size: var(--text-body-size);
+  line-height: var(--text-body-line);
+  font-weight: 400;
+}
+
+.rl-small {
+  font-size: var(--text-small-size);
+  line-height: var(--text-small-line);
+  font-weight: 400;
+}
+
+.rl-caption {
+  font-size: var(--text-caption-size);
+  line-height: var(--text-caption-line);
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+
+.rl-metric {
+  font-size: var(--text-metric-size);
+  line-height: var(--text-metric-line);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+/* --- UI primitives --- */
+.rl-card {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-elev-1);
+}
+
+.rl-card-hover {
+  transition: transform 140ms ease, box-shadow 140ms ease, border-color 140ms ease;
+}
+
+.rl-card-hover:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-elev-2);
+}
+
+.rl-divider {
+  border-top: 1px solid var(--border-subtle);
+}
+
+.rl-label {
+  display: block;
+  font-size: var(--text-small-size);
+  line-height: var(--text-small-line);
+  font-weight: 500;
+  color: var(--text-secondary);
+  margin-bottom: var(--space-1);
+}
+
+.rl-help {
+  font-size: var(--text-caption-size);
+  line-height: var(--text-caption-line);
+  color: var(--text-muted);
+}
+
+.rl-input {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: var(--radius-input);
+  background-color: var(--bg-surface-2);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-primary);
+  outline: none;
+  transition: box-shadow 140ms ease, border-color 140ms ease, background-color 140ms ease;
+}
+
+.rl-input::placeholder {
+  color: var(--text-muted);
+}
+
+.rl-input:focus {
+  border-color: rgba(255, 229, 138, 0.55);
+  box-shadow: 0 0 0 3px rgba(255, 229, 138, 0.18);
+}
+
+.rl-input[aria-invalid="true"] {
+  border-color: rgba(229, 57, 53, 0.65);
+  box-shadow: 0 0 0 3px rgba(229, 57, 53, 0.18);
+}
+
+.rl-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: 10px 14px;
+  border-radius: var(--radius-button);
+  font-size: var(--text-small-size);
+  line-height: var(--text-small-line);
+  font-weight: 600;
+  white-space: nowrap;
+  user-select: none;
+  transition: transform 120ms ease, filter 120ms ease, background-color 120ms ease,
+    border-color 120ms ease, opacity 120ms ease;
+}
+
+.rl-btn:active {
+  transform: translateY(1px);
+}
+
+.rl-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(255, 229, 138, 0.18);
+}
+
+.rl-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.rl-btn-primary {
+  background: var(--brand-yellow);
+  color: #0b1020;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+}
+
+.rl-btn-primary:hover {
+  filter: brightness(1.05);
+}
+
+.rl-btn-secondary {
+  background: var(--bg-surface-2);
+  color: var(--text-primary);
+  border: 1px solid var(--border-subtle);
+}
+
+.rl-btn-secondary:hover {
+  filter: brightness(1.08);
+}
+
+.rl-btn-ghost {
+  background: transparent;
+  color: var(--text-secondary);
+  border: 1px solid transparent;
+}
+
+.rl-btn-ghost:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-primary);
+}
+
+.rl-btn-danger {
+  background: var(--error);
+  color: #fff;
+  border: 1px solid rgba(0, 0, 0, 0.14);
+}
+
+.rl-btn-danger:hover {
+  filter: brightness(1.05);
+}
+
+.rl-alert {
+  border-radius: 12px;
+  border: 1px solid var(--border-subtle);
+  padding: 12px;
+  background: var(--bg-surface-2);
+  color: var(--text-secondary);
+}
+
+.rl-alert-error {
+  border-color: rgba(229, 57, 53, 0.35);
+  background: rgba(229, 57, 53, 0.08);
+  color: #ffd7d6;
+}
+
+.rl-alert-success {
+  border-color: rgba(61, 220, 151, 0.35);
+  background: rgba(61, 220, 151, 0.08);
+  color: #d8fff0;
+}
+
+.rl-alert-warning {
+  border-color: rgba(246, 168, 33, 0.35);
+  background: rgba(246, 168, 33, 0.08);
+  color: #ffe7c2;
+}
+
+.rl-alert-info {
+  border-color: rgba(77, 163, 255, 0.35);
+  background: rgba(77, 163, 255, 0.08);
+  color: #d7ebff;
 }
   

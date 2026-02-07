@@ -38,8 +38,8 @@ export default function LearnPage() {
     <div className="min-h-full">
       {/* Page header */}
       <div className="px-6 pt-6 pb-4">
-        <h1 className="text-2xl font-bold text-gray-900">Learn</h1>
-        <p className="mt-1 text-gray-500">Study materials and practice tests</p>
+        <h1 className="rl-h2">Learn</h1>
+        <p className="mt-1 text-[var(--text-muted)]">Study materials and practice tests</p>
       </div>
 
       {/* Tab navigation */}

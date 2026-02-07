@@ -27,11 +27,11 @@ export default function PricingCard({ plan, billingInterval, onSelect, loading }
   return (
     <div
       className={`
-        flex flex-col h-full p-6 rounded-lg shadow-md bg-white
+        flex flex-col h-full p-6 rl-card rl-card-hover
         ${
           isHighlighted
-            ? "border-2 border-blue-600 ring-2 ring-blue-100"
-            : "border border-gray-300"
+            ? "!border-[rgba(246,194,28,0.65)] ring-2 ring-[rgba(246,194,28,0.18)]"
+            : ""
         }
       `}
     >
@@ -39,7 +39,7 @@ export default function PricingCard({ plan, billingInterval, onSelect, loading }
       <h3
         className={`
           text-xl font-semibold text-center mb-2
-          ${isHighlighted ? "text-blue-600" : "text-gray-700"}
+          ${isHighlighted ? "text-[var(--brand-yellow)]" : "text-[var(--text-primary)]"}
         `}
       >
         {name}
@@ -48,15 +48,15 @@ export default function PricingCard({ plan, billingInterval, onSelect, loading }
       {/* Price display */}
       <div className="text-center mb-4">
         {displayPrice === null ? (
-          <span className="text-3xl font-bold text-gray-700">Free</span>
+          <span className="text-3xl font-bold text-[var(--text-primary)]">Free</span>
         ) : (
           <>
-            <span className="text-3xl font-bold text-gray-700">
+            <span className="text-3xl font-bold text-[var(--text-primary)]">
               {"\u20AC"}{displayPrice}
             </span>
-            <span className="text-gray-500 text-sm"> / month</span>
+            <span className="text-[var(--text-muted)] text-sm"> / month</span>
             {isYearly && pricePerYear > 0 && (
-              <p className="text-xs text-green-600 mt-1">
+              <p className="text-xs text-[var(--success)] mt-1">
                 Billed {"\u20AC"}{pricePerYear.toFixed(2)}/year
               </p>
             )}
@@ -65,17 +65,17 @@ export default function PricingCard({ plan, billingInterval, onSelect, loading }
       </div>
 
       {/* Divider */}
-      <div className="border-t border-gray-200 my-4"></div>
+      <div className="rl-divider my-4" />
 
       {/* Benefits list */}
       <ul className="space-y-3 mb-6 flex-grow">
         {benefits.map((benefit, index) => (
           <li
             key={index}
-            className="flex items-start gap-2 text-sm text-gray-600"
+            className="flex items-start gap-2 text-sm text-[var(--text-secondary)]"
           >
             <svg
-              className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5"
+              className="w-5 h-5 text-[var(--success)] flex-shrink-0 mt-0.5"
               fill="currentColor"
               viewBox="0 0 20 20"
               aria-hidden="true"
@@ -95,16 +95,10 @@ export default function PricingCard({ plan, billingInterval, onSelect, loading }
       <button
         onClick={() => onSelect(id)}
         disabled={loading}
-        className={`
-          w-full py-2 px-4 rounded-md font-medium transition-colors
-          focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2
-          disabled:opacity-50 disabled:cursor-not-allowed
-          ${
-            isHighlighted
-              ? "bg-blue-600 text-white hover:bg-blue-700"
-              : "border border-gray-300 text-gray-700 hover:bg-gray-50"
-          }
-        `}
+        className={[
+          "rl-btn w-full",
+          isHighlighted ? "rl-btn-primary" : "rl-btn-secondary",
+        ].join(" ")}
       >
         {loading ? "Loading..." : buttonText}
       </button>

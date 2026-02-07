@@ -83,22 +83,24 @@ export default function OAuthCallbackPage() {
   }, [searchParams, navigate]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+    <div className="min-h-screen flex items-center justify-center px-4 py-10">
       <div className="w-full max-w-md">
-        <div className="bg-white rounded-lg shadow-md p-8">
+        <div className="rl-card p-8">
           {processing ? (
             // Loading state
             <div className="text-center space-y-4">
-              <div className="mx-auto w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
-              <h2 className="text-xl font-semibold text-gray-800">Completing sign in...</h2>
-              <p className="text-sm text-gray-600">Please wait while we verify your account.</p>
+              <div className="mx-auto w-12 h-12 border-4 border-[rgba(255,229,138,0.22)] border-t-[var(--brand-yellow)] rounded-full animate-spin" />
+              <h2 className="rl-h3">Completing sign in...</h2>
+              <p className="text-sm text-[var(--text-secondary)]">
+                Please wait while we verify your account.
+              </p>
             </div>
           ) : error ? (
             // Error state
             <div className="space-y-4">
-              <div className="mx-auto w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
+              <div className="mx-auto w-12 h-12 bg-[rgba(229,57,53,0.10)] rounded-full flex items-center justify-center border border-[rgba(229,57,53,0.30)]">
                 <svg
-                  className="w-6 h-6 text-red-600"
+                  className="w-6 h-6 text-[var(--error)]"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -111,16 +113,16 @@ export default function OAuthCallbackPage() {
                   />
                 </svg>
               </div>
-              <h2 className="text-xl font-semibold text-gray-800 text-center">
+              <h2 className="rl-h3 text-center">
                 Authentication Failed
               </h2>
-              <div className="p-3 bg-red-50 border border-red-200 rounded text-sm text-red-700">
+              <div className="rl-alert rl-alert-error text-sm">
                 {error}
               </div>
               <button
                 type="button"
                 onClick={() => navigate("/")}
-                className="w-full py-2 px-4 bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                className="rl-btn rl-btn-primary w-full"
               >
                 Back to sign in
               </button>

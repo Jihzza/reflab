@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "./AuthProvider";
+import { useAuth } from "./AuthContext";
 
 /**
  * SessionExpiredModal - Modal shown when session expires
@@ -31,10 +31,10 @@ export default function SessionExpiredModal() {
       aria-modal="true"
       role="dialog"
     >
-      <div className="bg-white rounded-lg shadow-xl p-6 max-w-md mx-4">
-        <div className="flex items-center justify-center w-12 h-12 mx-auto bg-yellow-100 rounded-full mb-4">
+      <div className="rl-card p-6 max-w-md mx-4">
+        <div className="flex items-center justify-center w-12 h-12 mx-auto bg-[rgba(246,168,33,0.10)] border border-[rgba(246,168,33,0.30)] rounded-full mb-4">
           <svg
-            className="w-6 h-6 text-yellow-600"
+            className="w-6 h-6 text-[var(--warning)]"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -50,18 +50,18 @@ export default function SessionExpiredModal() {
 
         <h2
           id="session-expired-title"
-          className="text-xl font-semibold text-gray-900 text-center mb-2"
+          className="rl-h3 text-center mb-2"
         >
           Session Expired
         </h2>
 
-        <p className="text-gray-600 text-center mb-6">
+        <p className="text-[var(--text-secondary)] text-center mb-6">
           Your session has expired due to inactivity. Please sign in again to continue.
         </p>
 
         <button
           onClick={handleSignInAgain}
-          className="w-full px-4 py-2 bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+          className="rl-btn rl-btn-primary w-full"
         >
           Sign in again
         </button>

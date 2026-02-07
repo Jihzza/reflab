@@ -1,46 +1,60 @@
-import { useEffect, useState } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useEffect, useMemo, useState } from 'react'
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import {
-  getTestBySlug,
-  getQuestions,
-  getOrCreateAttempt,
+  abandonAttempt,
+  createAttempt,
   getAttemptAnswers,
+  getInProgressAttempt,
+  getQuestions,
+  getTestBySlug,
   saveAnswer,
   submitAttempt,
 } from '../api/testsApi'
-import type { Test, TestQuestion, TestAttempt, TestAttemptAnswer, OptionLetter } from '../types'
+import type { OptionLetter, Test, TestAttempt, TestAttemptAnswer, TestQuestion } from '../types'
+import Dialog from './Dialog'
 import QuestionCard from './QuestionCard'
-import TestResults from './TestResults'
+import { useLeaveGuard } from './useLeaveGuard'
 
-/**
- * TestPage - The main test-taking experience
- *
- * Features:
- * - Loads test and questions from Supabase
- * - Creates or resumes an attempt
- * - Allows navigation between questions
- * - Saves answers as you go
- * - Submit to see results
- */
 export default function TestPage() {
   const { slug } = useParams<{ slug: string }>()
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
 
-  // Data state
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
   const [test, setTest] = useState<Test | null>(null)
   const [questions, setQuestions] = useState<TestQuestion[]>([])
   const [attempt, setAttempt] = useState<TestAttempt | null>(null)
-  const [answers, setAnswers] = useState<Map<string, OptionLetter>>(new Map())
 
-  // UI state
+  const [confirmedAnswers, setConfirmedAnswers] = useState<Map<string, OptionLetter>>(new Map())
   const [currentIndex, setCurrentIndex] = useState(0)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const [pendingSelection, setPendingSelection] = useState<OptionLetter | null>(null)
+
+  const [saving, setSaving] = useState(false)
   const [submitting, setSubmitting] = useState(false)
 
-  // Load test data on mount
+  const [resumeDialogOpen, setResumeDialogOpen] = useState(false)
+  const [resumeAttempt, setResumeAttempt] = useState<TestAttempt | null>(null)
+
+  const leaveGuard = useLeaveGuard(true)
+
+  const restartRequested = searchParams.get('restart') === '1'
+
+  const currentQuestion = questions[currentIndex] ?? null
+  const isLastQuestion = currentIndex === questions.length - 1
+
+  const answeredCount = confirmedAnswers.size
+
+  const confirmedSelection = useMemo(() => {
+    if (!currentQuestion) return null
+    return confirmedAnswers.get(currentQuestion.id) ?? null
+  }, [currentQuestion, confirmedAnswers])
+
+  const effectiveSelection = pendingSelection ?? confirmedSelection
+
   useEffect(() => {
-    async function loadTest() {
+    async function load() {
       if (!slug) {
         setError('No test specified')
         setLoading(false)
@@ -50,120 +64,194 @@ export default function TestPage() {
       setLoading(true)
       setError(null)
 
-      try {
-        // 1. Get the test
-        const { data: testData, error: testError } = await getTestBySlug(slug)
-        if (testError || !testData) {
-          setError(testError?.message || 'Test not found')
-          setLoading(false)
-          return
-        }
-        setTest(testData)
-
-        // 2. Get questions
-        const { data: questionsData, error: questionsError } = await getQuestions(testData.id)
-        if (questionsError || !questionsData) {
-          setError(questionsError?.message || 'Failed to load questions')
-          setLoading(false)
-          return
-        }
-        setQuestions(questionsData)
-
-        // 3. Get or create attempt
-        const { data: attemptData, error: attemptError } = await getOrCreateAttempt(testData.id)
-        if (attemptError || !attemptData) {
-          setError(attemptError?.message || 'Failed to create attempt')
-          setLoading(false)
-          return
-        }
-        setAttempt(attemptData)
-
-        // 4. Load existing answers (for resume)
-        const { data: existingAnswers } = await getAttemptAnswers(attemptData.id)
-        if (existingAnswers) {
-          const answersMap = new Map<string, OptionLetter>()
-          existingAnswers.forEach((answer: TestAttemptAnswer) => {
-            answersMap.set(answer.question_id, answer.selected_option)
-          })
-          setAnswers(answersMap)
-        }
-
+      const { data: testData, error: testError } = await getTestBySlug(slug)
+      if (testError || !testData) {
+        setError(testError?.message || 'Test not found')
         setLoading(false)
-      } catch (err) {
-        setError('An unexpected error occurred')
-        setLoading(false)
+        return
       }
+      setTest(testData)
+
+      const { data: questionsData, error: questionsError } = await getQuestions(testData.id)
+      if (questionsError || !questionsData) {
+        setError(questionsError?.message || 'Failed to load questions')
+        setLoading(false)
+        return
+      }
+      setQuestions(questionsData)
+
+      // Check for an existing attempt first so we can prompt Resume/Restart/Cancel.
+      const { data: inProgress, error: inProgressError } = await getInProgressAttempt(testData.id)
+      if (inProgressError) {
+        setError(inProgressError.message)
+        setLoading(false)
+        return
+      }
+
+      if (restartRequested) {
+        if (inProgress?.id) await abandonAttempt(inProgress.id)
+        const { data: newAttempt, error: createError } = await createAttempt(testData.id)
+        if (createError || !newAttempt) {
+          setError(createError?.message || 'Failed to start test')
+          setLoading(false)
+          return
+        }
+        setAttempt(newAttempt)
+        setConfirmedAnswers(new Map())
+        setCurrentIndex(0)
+        setLoading(false)
+        return
+      }
+
+      if (inProgress) {
+        setResumeAttempt(inProgress)
+        setResumeDialogOpen(true)
+        setLoading(false)
+        return
+      }
+
+      const { data: newAttempt, error: createError } = await createAttempt(testData.id)
+      if (createError || !newAttempt) {
+        setError(createError?.message || 'Failed to start test')
+        setLoading(false)
+        return
+      }
+      setAttempt(newAttempt)
+      setLoading(false)
     }
 
-    loadTest()
-  }, [slug])
+    load()
+  }, [slug, restartRequested])
 
-  // Handle selecting an option
-  const handleSelectOption = async (option: OptionLetter) => {
-    if (!attempt || !questions[currentIndex]) return
+  const loadAnswersForAttempt = async (attemptId: string, qs: TestQuestion[]) => {
+    const { data: existingAnswers, error } = await getAttemptAnswers(attemptId)
+    if (error) {
+      setError(error.message)
+      return
+    }
 
-    const questionId = questions[currentIndex].id
+    const map = new Map<string, OptionLetter>()
+    ;(existingAnswers ?? []).forEach((a: TestAttemptAnswer) => {
+      map.set(a.question_id, a.selected_option as OptionLetter)
+    })
+    setConfirmedAnswers(map)
 
-    // Update local state immediately for responsiveness
-    setAnswers((prev) => new Map(prev).set(questionId, option))
-
-    // Save to database
-    await saveAnswer(attempt.id, questionId, option)
+    // Move to first unanswered question, if any.
+    const firstUnansweredIndex = qs.findIndex((q) => !map.has(q.id))
+    setCurrentIndex(firstUnansweredIndex === -1 ? 0 : firstUnansweredIndex)
   }
 
-  // Navigate to next question
-  const handleNext = () => {
-    if (currentIndex < questions.length - 1) {
-      setCurrentIndex(currentIndex + 1)
+  const handleResume = async () => {
+    if (!resumeAttempt) return
+    setAttempt(resumeAttempt)
+    await loadAnswersForAttempt(resumeAttempt.id, questions)
+    setResumeDialogOpen(false)
+    setResumeAttempt(null)
+  }
+
+  const handleRestart = async () => {
+    if (!test) return
+    if (resumeAttempt?.id) {
+      await abandonAttempt(resumeAttempt.id)
+    }
+
+    const { data: newAttempt, error } = await createAttempt(test.id)
+    if (error || !newAttempt) {
+      setError(error?.message || 'Failed to restart test')
+      return
+    }
+
+    setAttempt(newAttempt)
+    setConfirmedAnswers(new Map())
+    setCurrentIndex(0)
+    setResumeDialogOpen(false)
+    setResumeAttempt(null)
+  }
+
+  const handleCancelResumePrompt = () => {
+    setResumeDialogOpen(false)
+    setResumeAttempt(null)
+    leaveGuard.bypassNextNavigation()
+    navigate('/app/learn', { replace: true })
+  }
+
+  const handleSelect = (option: OptionLetter) => {
+    setPendingSelection(option)
+  }
+
+  const handleBack = () => {
+    setPendingSelection(null)
+    setCurrentIndex((i) => Math.max(0, i - 1))
+  }
+
+  const handleConfirm = async () => {
+    if (!attempt || !currentQuestion || !effectiveSelection) return
+
+    setSaving(true)
+    setError(null)
+
+    // Only hit the DB if the choice changed or isn't saved yet.
+    if (effectiveSelection !== confirmedSelection) {
+      const { error } = await saveAnswer(attempt.id, currentQuestion.id, effectiveSelection)
+      if (error) {
+        setError(error.message)
+        setSaving(false)
+        return
+      }
+
+      setConfirmedAnswers((prev) => {
+        const next = new Map(prev)
+        next.set(currentQuestion.id, effectiveSelection)
+        return next
+      })
+    }
+
+    setSaving(false)
+    setPendingSelection(null)
+
+    if (isLastQuestion) {
+      await handleEndTest()
+    } else {
+      setCurrentIndex((i) => Math.min(questions.length - 1, i + 1))
     }
   }
 
-  // Navigate to previous question
-  const handlePrev = () => {
-    if (currentIndex > 0) {
-      setCurrentIndex(currentIndex - 1)
-    }
-  }
-
-  // Submit the test
-  const handleSubmit = async () => {
-    if (!attempt) return
+  const handleEndTest = async () => {
+    if (!attempt || !slug) return
 
     setSubmitting(true)
-    const { data: updatedAttempt, error: submitError } = await submitAttempt(attempt.id)
+    setError(null)
 
-    if (submitError || !updatedAttempt) {
-      setError(submitError?.message || 'Failed to submit test')
+    const { data: updatedAttempt, error } = await submitAttempt(attempt.id)
+    if (error || !updatedAttempt) {
+      const rich = error as { details?: string | null; hint?: string | null } | null
+      setError(rich?.details || error?.message || 'Failed to submit test')
       setSubmitting(false)
       return
     }
 
-    setAttempt(updatedAttempt)
     setSubmitting(false)
+    leaveGuard.bypassNextNavigation()
+    navigate(`/app/learn/test/${slug}/attempt/${updatedAttempt.id}/results`)
   }
 
-  // Loading state
   if (loading) {
     return (
       <div className="p-6">
         <div className="animate-pulse space-y-4">
-          <div className="h-8 bg-gray-200 rounded w-1/3"></div>
-          <div className="h-64 bg-gray-200 rounded"></div>
+          <div className="h-8 bg-white/10 rounded w-1/3" />
+          <div className="h-64 bg-white/10 rounded-[var(--radius-card)]" />
         </div>
       </div>
     )
   }
 
-  // Error state
   if (error) {
     return (
       <div className="p-6">
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-          <p className="text-red-700">{error}</p>
-          <button
-            onClick={() => navigate('/app/learn')}
-            className="mt-4 text-blue-600 hover:underline"
-          >
+        <div className="rl-alert rl-alert-error">
+          <p>{error}</p>
+          <button onClick={() => navigate('/app/learn')} className="mt-4 rl-btn rl-btn-secondary">
             Back to Learn
           </button>
         </div>
@@ -171,114 +259,91 @@ export default function TestPage() {
     )
   }
 
-  // Show results if test is submitted
-  if (attempt?.status === 'submitted') {
-    return <TestResults attempt={attempt} testTitle={test?.title || 'Test'} />
+  if (!test || questions.length === 0 || (!attempt && !resumeAttempt)) {
+    return (
+      <div className="p-6">
+        <p className="text-[var(--text-secondary)]">Test unavailable.</p>
+        <button onClick={() => navigate('/app/learn')} className="mt-4 rl-btn rl-btn-secondary">
+          Back to Learn
+        </button>
+      </div>
+    )
   }
 
-  // Current question
-  const currentQuestion = questions[currentIndex]
-  const currentAnswer = currentQuestion ? answers.get(currentQuestion.id) || null : null
-  const answeredCount = answers.size
-  const allAnswered = answeredCount === questions.length
-
   return (
-    <div className="min-h-full bg-gray-50">
-      {/* Header */}
-      <div className="bg-white border-b px-6 py-4">
+    <div className="min-h-full">
+      <div className="border-b border-[var(--border-subtle)] bg-[var(--bg-surface)]/85 backdrop-blur px-6 py-4">
         <div className="flex items-center justify-between">
           <div>
             <button
               onClick={() => navigate('/app/learn')}
-              className="text-gray-500 hover:text-gray-700 text-sm mb-1"
+              className="text-[var(--text-secondary)] hover:text-[var(--text-primary)] text-sm mb-1"
             >
-              ← Back to Learn
+              ← Leave Test
             </button>
-            <h1 className="text-xl font-bold text-gray-900">{test?.title}</h1>
+            <h1 className="rl-h3">{test.title}</h1>
           </div>
-          <div className="text-sm text-gray-500">
+          <div className="text-sm text-[var(--text-secondary)]">
             {answeredCount} / {questions.length} answered
           </div>
         </div>
       </div>
 
-      {/* Question */}
       <div className="p-6 max-w-2xl mx-auto">
-        {currentQuestion && (
+        {currentQuestion ? (
           <QuestionCard
             question={currentQuestion}
             questionNumber={currentIndex + 1}
             totalQuestions={questions.length}
-            selectedOption={currentAnswer}
-            onSelectOption={handleSelectOption}
+            selectedOption={effectiveSelection}
+            onSelectOption={handleSelect}
           />
-        )}
+        ) : null}
 
-        {/* Navigation */}
         <div className="mt-6 flex items-center justify-between">
-          <button
-            onClick={handlePrev}
-            disabled={currentIndex === 0}
-            className={`
-              px-4 py-2 rounded-lg font-medium
-              ${currentIndex === 0
-                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-              }
-            `}
-          >
-            Previous
-          </button>
-
-          {/* Question dots */}
-          <div className="flex gap-2">
-            {questions.map((q, idx) => {
-              const isAnswered = answers.has(q.id)
-              const isCurrent = idx === currentIndex
-
-              return (
-                <button
-                  key={q.id}
-                  onClick={() => setCurrentIndex(idx)}
-                  className={`
-                    w-3 h-3 rounded-full transition-all
-                    ${isCurrent
-                      ? 'bg-blue-600 scale-125'
-                      : isAnswered
-                        ? 'bg-blue-300'
-                        : 'bg-gray-300'
-                    }
-                  `}
-                  aria-label={`Go to question ${idx + 1}`}
-                />
-              )
-            })}
-          </div>
-
-          {currentIndex === questions.length - 1 ? (
-            <button
-              onClick={handleSubmit}
-              disabled={!allAnswered || submitting}
-              className={`
-                px-4 py-2 rounded-lg font-medium
-                ${allAnswered && !submitting
-                  ? 'bg-green-600 text-white hover:bg-green-700'
-                  : 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                }
-              `}
-            >
-              {submitting ? 'Submitting...' : 'Submit'}
-            </button>
+          {currentIndex === 0 ? (
+            <div />
           ) : (
             <button
-              onClick={handleNext}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700"
+              onClick={handleBack}
+              className="rl-btn rl-btn-secondary"
             >
-              Next
+              Back
             </button>
           )}
+
+          <button
+            onClick={handleConfirm}
+            disabled={!effectiveSelection || saving || submitting}
+            className="rl-btn rl-btn-primary"
+          >
+            {submitting ? 'Submitting...' : saving ? 'Saving...' : isLastQuestion ? 'End Test' : 'Confirm'}
+          </button>
         </div>
       </div>
+
+      <Dialog
+        open={resumeDialogOpen}
+        title="Resume test?"
+        description="You have an in-progress attempt for this test."
+        actions={[
+          { label: 'Cancel', onClick: handleCancelResumePrompt, variant: 'secondary' },
+          { label: 'Restart', onClick: handleRestart, variant: 'danger' },
+          { label: 'Resume', onClick: handleResume, variant: 'primary' },
+        ]}
+        onClose={() => {}}
+      />
+
+      <Dialog
+        open={leaveGuard.open}
+        title="Leave the test?"
+        description="Your progress is saved. You can resume later."
+        actions={[
+          { label: 'Cancel', onClick: leaveGuard.closeAndStay, variant: 'secondary' },
+          { label: 'Confirm', onClick: leaveGuard.closeAndLeave, variant: 'danger' },
+        ]}
+        onClose={leaveGuard.closeAndStay}
+      />
     </div>
   )
 }

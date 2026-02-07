@@ -20,9 +20,9 @@ export default function TestResults({ attempt, testTitle }: TestResultsProps) {
 
   // Determine result color based on score
   const getScoreColor = () => {
-    if (scorePercent >= 80) return 'text-green-600'
-    if (scorePercent >= 60) return 'text-yellow-600'
-    return 'text-red-600'
+    if (scorePercent >= 80) return 'text-[var(--success)]'
+    if (scorePercent >= 60) return 'text-[var(--warning)]'
+    return 'text-[var(--error)]'
   }
 
   const getScoreMessage = () => {
@@ -33,17 +33,17 @@ export default function TestResults({ attempt, testTitle }: TestResultsProps) {
 
   return (
     <div className="min-h-full flex items-center justify-center p-6">
-      <div className="bg-white rounded-lg border border-gray-200 p-8 max-w-md w-full text-center">
+      <div className="rl-card p-8 max-w-md w-full text-center">
         {/* Title */}
-        <h1 className="text-xl font-bold text-gray-900 mb-2">{testTitle}</h1>
-        <p className="text-gray-500 mb-6">Test Completed</p>
+        <h1 className="rl-h3 mb-2">{testTitle}</h1>
+        <p className="text-[var(--text-muted)] mb-6">Test Completed</p>
 
         {/* Score circle */}
         <div className="mb-6">
           <div className={`text-6xl font-bold ${getScoreColor()}`}>
             {scorePercent}%
           </div>
-          <p className="text-gray-600 mt-2">
+          <p className="text-[var(--text-secondary)] mt-2">
             {scoreCorrect} out of {scoreTotal} correct
           </p>
         </div>
@@ -57,7 +57,7 @@ export default function TestResults({ attempt, testTitle }: TestResultsProps) {
         <div className="space-y-3">
           <button
             onClick={() => navigate('/app/learn')}
-            className="w-full py-3 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            className="rl-btn rl-btn-primary w-full"
           >
             Back to Learn
           </button>

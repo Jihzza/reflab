@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "./AuthProvider";
+import { useAuth } from "./AuthContext";
 import { classifyAuthError, errorToFormErrors, logAuthError } from "../api/authErrors";
 import type { AuthFormErrors } from "../types";
 
@@ -24,28 +24,12 @@ export default function ResetPassword() {
   const [errors, setErrors] = useState<AuthFormErrors>({});
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
-  const [checkingSession, setCheckingSession] = useState(true);
-
-  // Check if user has a valid recovery session
-  useEffect(() => {
-    // Wait for session check to complete
-    if (authStatus === "checking_session") {
-      setCheckingSession(true);
-      return;
-    }
-
-    setCheckingSession(false);
-
-    if (!user) {
-      // No recovery session detected after check completed
-      setErrors({
-        general:
-          "Invalid or expired password reset link. Please request a new one from the login page.",
-      });
-    } else {
-      console.log("[ResetPassword] Recovery session detected for:", user.email);
-    }
-  }, [user, authStatus]);
+  const checkingSession = authStatus === "checking_session";
+  const linkError =
+    !checkingSession && !user
+      ? "Invalid or expired password reset link. Please request a new one from the login page."
+      : null;
+  const generalError = errors.general || linkError;
 
   // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
@@ -99,21 +83,21 @@ export default function ResetPassword() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+    <div className="min-h-screen flex items-center justify-center px-4 py-10">
       <div className="w-full max-w-md">
-        <div className="bg-white rounded-lg shadow-md p-8">
+        <div className="rl-card p-8">
           {checkingSession ? (
             // Loading state while checking for recovery session
             <div className="text-center space-y-4">
-              <div className="mx-auto w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
-              <p className="text-gray-600">Verifying reset link...</p>
+              <div className="mx-auto w-12 h-12 border-4 border-[rgba(255,229,138,0.22)] border-t-[var(--brand-yellow)] rounded-full animate-spin" />
+              <p className="text-[var(--text-secondary)]">Verifying reset link...</p>
             </div>
           ) : success ? (
             // Success state
             <div className="text-center space-y-4">
-              <div className="mx-auto w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+              <div className="mx-auto w-12 h-12 bg-[rgba(61,220,151,0.10)] rounded-full flex items-center justify-center border border-[rgba(61,220,151,0.30)]">
                 <svg
-                  className="w-6 h-6 text-green-600"
+                  className="w-6 h-6 text-[var(--success)]"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -126,8 +110,8 @@ export default function ResetPassword() {
                   />
                 </svg>
               </div>
-              <h2 className="text-xl font-semibold text-gray-800">Password Updated</h2>
-              <p className="text-sm text-gray-600">
+              <h2 className="rl-h3">Password Updated</h2>
+              <p className="text-sm text-[var(--text-secondary)]">
                 Your password has been successfully updated. Redirecting to dashboard...
               </p>
             </div>
@@ -135,14 +119,14 @@ export default function ResetPassword() {
             // Form state
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="text-center mb-6">
-                <h2 className="text-2xl font-bold text-gray-800 mb-2">Set new password</h2>
-                <p className="text-sm text-gray-600">Enter your new password below.</p>
+                <h2 className="rl-h2 mb-2">Set new password</h2>
+                <p className="text-sm text-[var(--text-secondary)]">Enter your new password below.</p>
               </div>
 
               {/* General error message */}
-              {errors.general && (
-                <div className="p-3 bg-red-50 border border-red-200 rounded text-sm text-red-700">
-                  {errors.general}
+              {generalError && (
+                <div className="rl-alert rl-alert-error text-sm">
+                  {generalError}
                 </div>
               )}
 
@@ -153,7 +137,7 @@ export default function ResetPassword() {
                   <div>
                     <label
                       htmlFor="new-password"
-                      className="block text-sm font-medium text-gray-700 mb-1"
+                      className="rl-label"
                     >
                       New Password
                     </label>
@@ -162,16 +146,13 @@ export default function ResetPassword() {
                       type="password"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 ${
-                        errors.password
-                          ? "border-red-300 focus:ring-red-500"
-                          : "border-gray-300 focus:ring-blue-500"
-                      }`}
+                      className="rl-input"
                       placeholder="At least 6 characters"
+                      aria-invalid={!!errors.password}
                       disabled={loading}
                     />
                     {errors.password && (
-                      <p className="mt-1 text-sm text-red-600">{errors.password}</p>
+                      <p className="mt-1 text-sm text-[var(--error)]">{errors.password}</p>
                     )}
                   </div>
 
@@ -179,7 +160,7 @@ export default function ResetPassword() {
                   <div>
                     <label
                       htmlFor="confirm-password"
-                      className="block text-sm font-medium text-gray-700 mb-1"
+                      className="rl-label"
                     >
                       Confirm Password
                     </label>
@@ -188,16 +169,13 @@ export default function ResetPassword() {
                       type="password"
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
-                      className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 ${
-                        errors.confirmPassword
-                          ? "border-red-300 focus:ring-red-500"
-                          : "border-gray-300 focus:ring-blue-500"
-                      }`}
+                      className="rl-input"
                       placeholder="••••••••"
+                      aria-invalid={!!errors.confirmPassword}
                       disabled={loading}
                     />
                     {errors.confirmPassword && (
-                      <p className="mt-1 text-sm text-red-600">{errors.confirmPassword}</p>
+                      <p className="mt-1 text-sm text-[var(--error)]">{errors.confirmPassword}</p>
                     )}
                   </div>
 
@@ -205,7 +183,7 @@ export default function ResetPassword() {
                   <button
                     type="submit"
                     disabled={loading}
-                    className="w-full py-2 px-4 bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="rl-btn rl-btn-primary w-full"
                   >
                     {loading ? "Updating..." : "Update password"}
                   </button>
@@ -217,7 +195,7 @@ export default function ResetPassword() {
                 <button
                   type="button"
                   onClick={() => navigate("/")}
-                  className="w-full py-2 px-4 border border-gray-300 bg-white text-gray-700 font-medium rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                  className="rl-btn rl-btn-secondary w-full"
                 >
                   Back to login
                 </button>

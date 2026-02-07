@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "./AuthProvider";
+import { useAuth } from "./AuthContext";
 import { classifyAuthError, errorToFormErrors, logAuthError } from "../api/authErrors";
 import type { AuthFormErrors } from "../types";
 
@@ -111,14 +111,14 @@ export default function SignupForm() {
       <form onSubmit={handleSubmit} className="space-y-4">
         {/* General error message */}
         {errors.general && (
-          <div className="p-3 bg-red-50 border border-red-200 rounded text-sm text-red-700">
+          <div className="rl-alert rl-alert-error text-sm">
             {errors.general}
           </div>
         )}
 
         {/* Email field */}
         <div>
-          <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+          <label htmlFor="email" className="rl-label">
             Email
           </label>
           <input
@@ -126,20 +126,17 @@ export default function SignupForm() {
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 ${
-              errors.email
-                ? "border-red-300 focus:ring-red-500"
-                : "border-gray-300 focus:ring-blue-500"
-            }`}
+            className="rl-input"
             placeholder="you@example.com"
+            aria-invalid={!!errors.email}
             disabled={loading}
           />
-          {errors.email && <p className="mt-1 text-sm text-red-600">{errors.email}</p>}
+          {errors.email && <p className="mt-1 text-sm text-[var(--error)]">{errors.email}</p>}
         </div>
 
         {/* Password field */}
         <div>
-          <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+          <label htmlFor="password" className="rl-label">
             Password
           </label>
           <input
@@ -147,22 +144,21 @@ export default function SignupForm() {
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 ${
-              errors.password
-                ? "border-red-300 focus:ring-red-500"
-                : "border-gray-300 focus:ring-blue-500"
-            }`}
+            className="rl-input"
             placeholder="At least 6 characters"
+            aria-invalid={!!errors.password}
             disabled={loading}
           />
-          {errors.password && <p className="mt-1 text-sm text-red-600">{errors.password}</p>}
+          {errors.password && (
+            <p className="mt-1 text-sm text-[var(--error)]">{errors.password}</p>
+          )}
         </div>
 
         {/* Confirm Password field */}
         <div>
           <label
             htmlFor="confirmPassword"
-            className="block text-sm font-medium text-gray-700 mb-1"
+            className="rl-label"
           >
             Confirm Password
           </label>
@@ -171,16 +167,13 @@ export default function SignupForm() {
             type="password"
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
-            className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 ${
-              errors.confirmPassword
-                ? "border-red-300 focus:ring-red-500"
-                : "border-gray-300 focus:ring-blue-500"
-            }`}
+            className="rl-input"
             placeholder="••••••••"
+            aria-invalid={!!errors.confirmPassword}
             disabled={loading}
           />
           {errors.confirmPassword && (
-            <p className="mt-1 text-sm text-red-600">{errors.confirmPassword}</p>
+            <p className="mt-1 text-sm text-[var(--error)]">{errors.confirmPassword}</p>
           )}
         </div>
 
@@ -188,7 +181,7 @@ export default function SignupForm() {
         <button
           type="submit"
           disabled={loading}
-          className="w-full py-2 px-4 bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="rl-btn rl-btn-primary w-full"
         >
           {loading ? "Creating account..." : "Sign up"}
         </button>
@@ -196,10 +189,12 @@ export default function SignupForm() {
         {/* Divider */}
         <div className="relative my-6">
           <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-gray-300"></div>
+            <div className="w-full rl-divider" />
           </div>
           <div className="relative flex justify-center text-sm">
-            <span className="px-2 bg-white text-gray-500">Or continue with</span>
+            <span className="px-2 bg-[var(--bg-surface)] text-[var(--text-muted)]">
+              Or continue with
+            </span>
           </div>
         </div>
 
@@ -208,7 +203,7 @@ export default function SignupForm() {
           type="button"
           onClick={handleGoogleSignUp}
           disabled={loading}
-          className="w-full py-2 px-4 border border-gray-300 bg-white text-gray-700 font-medium rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+          className="rl-btn rl-btn-secondary w-full"
         >
           <svg className="w-5 h-5" viewBox="0 0 24 24">
             <path

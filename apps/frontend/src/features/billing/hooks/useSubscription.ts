@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react'
-import { useAuth } from '@/features/auth/components/AuthProvider'
+import { useAuth } from '@/features/auth/components/AuthContext'
 import { supabase } from '@/lib/supabaseClient'
 import type { PlanName, Subscription } from '../types'
 
